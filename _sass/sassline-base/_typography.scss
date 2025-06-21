@@ -5,18 +5,22 @@
 html {
   @include rootsize;
 
-  -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
+  &{ 
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
 }
 
 // Site-wide base styles.
 body {
   @include fontsize(zeta, all);
 
-  font-family: unquote(map-get($bodytype, font-family));
-  font-style: normal;
-  font-weight: map-get($bodytype, regular);
-  line-height: 2rem;
+  & {
+    font-family: unquote(map-get($bodytype, font-family));
+    font-style: normal;
+    font-weight: map-get($bodytype, regular);
+    line-height: 2rem;
+  }
 }
 
 // Links.
@@ -54,16 +58,20 @@ a {
   p {
     @include baseline($fontsize: zeta, $font: $bodytype, $lineheight: 2, $below: 2, $breakpoint: all);
 
-    font-feature-settings: 'kern', 'onum', 'liga';
+    & {
+      font-feature-settings: 'kern', 'onum', 'liga';
+    }
   }
 
   // Headings. OpenType ligatures, discretionary ligatures and lining figures enabled if available.
   h1, h2, h3, h4, h5, h6 {
-    color: $headingColour;
-    font-family: unquote(map-get($headingtype, font-family));
-    font-feature-settings: 'dlig', 'liga', 'lnum', 'kern';
-    font-style: normal;
-    font-weight: map-get($headingtype, bold);
+    & {
+      color: $headingColour;
+      font-family: unquote(map-get($headingtype, font-family));
+      font-feature-settings: 'dlig', 'liga', 'lnum', 'kern';
+      font-style: normal;
+      font-weight: map-get($headingtype, bold);
+    }
   }
 
   // Heading level 1.
@@ -101,17 +109,19 @@ a {
     @include baseline(zeta, $bodytype, 2, 2, all);
 
     li {
-      font-feature-settings: 'kern', 'onum', 'liga';
-      margin-left: 2rem;
-
-      @include breakpoint(break-1) {
-        margin-left: 0;
-      }
-
-      ol, ul {
-        padding-top: 1rem;
-        margin-bottom: 1rem;
+      & {
+        font-feature-settings: 'kern', 'onum', 'liga';
         margin-left: 2rem;
+
+        @include breakpoint(break-1) {
+          margin-left: 0;
+        }
+
+        ol, ul {
+          padding-top: 1rem;
+          margin-bottom: 1rem;
+          margin-left: 2rem;
+        }
       }
     }
   }
@@ -192,11 +202,13 @@ a {
     @include baseline(zeta, $bodytype, 2, 2, all);
 
     dt, dd {
-      font-feature-settings: 'kern', 'onum', 'liga';
-      margin-left: 2rem;
+      & {
+        font-feature-settings: 'kern', 'onum', 'liga';
+        margin-left: 2rem;
 
-      @include breakpoint(break-1) {
-        margin-left: 0;
+        @include breakpoint(break-1) {
+          margin-left: 0;
+        }
       }
     }
 
@@ -213,17 +225,19 @@ a {
   table {
     @include sassline(eta, $headingtype, 2, 0, all);
 
-    font-family: unquote(map-get($headingtype, font-family));
-    font-feature-settings: 'liga', 'lnum', 'tnum', 'kern';
-    font-style: normal;
-    font-weight: map-get($headingtype, regular);
-    width: 100%;
+    & {
+      font-family: unquote(map-get($headingtype, font-family));
+      font-feature-settings: 'liga', 'lnum', 'tnum', 'kern';
+      font-style: normal;
+      font-weight: map-get($headingtype, regular);
+      width: 100%;
 
-    thead {
+      thead {
 
-      th {
-        @include sassline(zeta, $headingtype, 2, 0, all);
-        padding-bottom: 1px;
+        th {
+          @include sassline(zeta, $headingtype, 2, 0, all);
+          padding-bottom: 1px;
+        }
       }
     }
   }
@@ -291,7 +305,7 @@ a {
         $baseline-shift: #{($get-size / 2 * ((2 * $rootsize / $get-size) - map-get($bodytype, cap-height))) / $rootsize + 0.00001};
         $baseline-push: #{3 - (($get-size * ((2 * $rootsize / $get-size) - map-get($bodytype, cap-height))) / $rootsize + 0.00001)};
 
-        @media screen and (min-width: nth($points, $i) / 16 * 1em ) {
+        @media screen and (min-width: calc(nth($points, $i) / 16 * 1em) ) {
           margin-bottom: #{$baseline-push}rem;
           padding-bottom: #{$baseline-shift}rem;
         }
