@@ -236,7 +236,9 @@ a {
 
         th {
           @include sassline(zeta, $headingtype, 2, 0, all);
-          padding-bottom: 1px;
+          & {
+            padding-bottom: 1px;
+          }
         }
       }
     }
@@ -256,9 +258,11 @@ a {
   small, .caption {
     @include fontsize(theta, all);
 
-    font-family: unquote(map-get($headingtype, font-family));
-    font-style: normal;
-    font-weight: map-get($headingtype, regular);
+    &{
+      font-family: unquote(map-get($headingtype, font-family));
+      font-style: normal;
+      font-weight: map-get($headingtype, regular);
+    }
   }
 
   small {
@@ -268,7 +272,9 @@ a {
   .caption {
     @include baseline(theta, $headingtype, 2, 2, all);
 
-    color: $captionColour;
+    & {
+      color: $captionColour;
+    }
   }
 
   // Nice spacing for captions.
@@ -292,8 +298,8 @@ a {
       $get-scale: map-get($modular-scale, scale-0);
       $get-size: map-get($get-scale, zeta);
       $rootsize: nth($sizes, 1);
-      $baseline-shift: #{($get-size / 2 * ((2 * $rootsize / $get-size) - map-get($bodytype, cap-height))) / $rootsize + 0.00001};
-      $baseline-push: #{3 - (($get-size * ((2 * $rootsize / $get-size) - map-get($bodytype, cap-height))) / $rootsize + 0.00001)};
+      $baseline-shift: #{calc((calc($get-size / 2) * (calc((2 * $rootsize / $get-size)) - map-get($bodytype, cap-height))) / $rootsize) + 0.00001};
+      $baseline-push: #{3 - (calc(($get-size * calc(((2 * $rootsize / $get-size)) - map-get($bodytype, cap-height))) / $rootsize) + 0.00001)};
 
       margin-bottom: #{$baseline-push}rem;
       padding-bottom: #{$baseline-shift}rem;
@@ -302,8 +308,8 @@ a {
         $get-scale: map-get($modular-scale, scale-#{$i - 1});
         $get-size: map-get($get-scale, zeta);
         $rootsize: nth($sizes, $i);
-        $baseline-shift: #{($get-size / 2 * ((2 * $rootsize / $get-size) - map-get($bodytype, cap-height))) / $rootsize + 0.00001};
-        $baseline-push: #{3 - (($get-size * ((2 * $rootsize / $get-size) - map-get($bodytype, cap-height))) / $rootsize + 0.00001)};
+        $baseline-shift: #{calc((calc($get-size / 2) * calc(((2 * $rootsize / $get-size)) - map-get($bodytype, cap-height))) / $rootsize) + 0.00001};
+        $baseline-push: #{3 - (calc(($get-size * calc(((2 * $rootsize / $get-size)) - map-get($bodytype, cap-height))) / $rootsize) + 0.00001)};
 
         @media screen and (min-width: calc(nth($points, $i) / 16 * 1em) ) {
           margin-bottom: #{$baseline-push}rem;
@@ -348,7 +354,9 @@ a {
   code {
     @include fontsize(theta, all);
 
-    line-height: 1rem;
+    & {
+      line-height: 1rem;
+    }
   }
 
   // Letter space those capitals people, Jan Tschichold would be proud.
