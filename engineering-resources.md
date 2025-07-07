@@ -2,9 +2,8 @@
 layout: page
 title: Engineering Resources
 permalink: /engineering-resources/
+background: "/assets/images/hero.jpg"
 ---
-
-# Engineering Leadership Resources
 
 Listed below are some of my favorite Engineering resources I've found helpful as I've progressed through my career and several templates I've put together to get the ball rolling for new managers.
 

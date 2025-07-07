@@ -2,9 +2,9 @@
 layout: page
 title: Coaching
 permalink: /coaching/
+background: "/assets/images/hero.jpg"
 ---
-# Coaching and Training for Engineers and Engineering Leaders
-## For Individuals
+
 Are you looking to accelerate your career growth? Are you new to Engineering Management? Let me help!
 
 * Create a career plan and get promoted

@@ -1,6 +1,7 @@
 ---
 title: The 3 Biggest Career Mistakes I Made as a Software Engineer
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 When I started my first Software Engineering job, a combination of technical insecurity (no Computer Science degree) and a naive understanding of professional development (this was my first real job) led me to believe that my career advancement would be pretty straight forward: Accrue as much programming experience as possible (patterns, languages, tools, systems, etc.) so I could solve any programming problem I came across. But the longer I worked, the more I realized I was severely neglecting very important parts of my professional development.

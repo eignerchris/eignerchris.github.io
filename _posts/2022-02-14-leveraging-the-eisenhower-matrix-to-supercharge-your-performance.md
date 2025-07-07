@@ -1,6 +1,7 @@
 ---
 title: Leveraging the Eisenhower Matrix to Supercharge your Performance
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 As you advance in your career you'll find you are increasingly "in demand", both internally and externally. If left unchecked this work will consume your entire schedule; it's important to prioritize accordingly. The Eisenhower Matrix is a framework by which you can bucket different kinds of work so that you can focus on only the highest impact items.

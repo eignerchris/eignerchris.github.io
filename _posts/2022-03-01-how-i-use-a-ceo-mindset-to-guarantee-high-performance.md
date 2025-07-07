@@ -1,6 +1,7 @@
 ---
 title: How I Use a CEO Mindset to Guarantee High Performance
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 There is considerable overlap between the roles and responsibilities of a CEO and any other leader. These roles and responsibilities include:

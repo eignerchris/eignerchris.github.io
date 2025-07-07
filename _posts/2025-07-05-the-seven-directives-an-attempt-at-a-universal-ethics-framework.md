@@ -1,6 +1,7 @@
 ---
 title: "The Seven Directives - An Attempt at a Universal Ethics Framework"
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 For centuries, societies have looked to religious texts for moral guidance, but what if we could articulate a set of principles that transcends any single faith?

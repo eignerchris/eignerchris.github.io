@@ -1,6 +1,7 @@
 ---
 title: How to Get Hired as a Software Engineer
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 A couple things conspired for me to write this post. First, I was browsing the [/cscareerquestions](https://reddit.com/r/cscareerquestions) subreddit and seeing some variation of "How Do I get Hired as a Software Engineer?" question over and over again. Second, I've been helping a family friend and recent Computer Science graduate try to get his first Software Engineering job and I find myself giving similar advice for both. So, rather than continue to copy/paste my advice all over Reddit, I thought I'd try to consolidate some of my thoughts into a blog post. The answer to "How do I get Hired as a Software Engineer?" depends on what type of company you are targeting.

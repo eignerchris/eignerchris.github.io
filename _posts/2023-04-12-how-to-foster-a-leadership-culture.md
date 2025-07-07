@@ -1,6 +1,7 @@
 ---
 title: How to Foster a Leadership Culture
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 Effective leadership is crucial for the success of any organization, and fostering a leadership culture can help ensure that all team members are empowered to contribute to that success. A healthy team is one in which everyone, regardless of their position or title, is encouraged to take ownership. Here are some tips for fostering a leadership culture in your organization.

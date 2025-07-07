@@ -1,6 +1,7 @@
 ---
 title: How to Improve Onboarding with 30/60/90-day Plans
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 Onboarding is a critical process for new employees, as it sets the tone for their entire tenure with the company. Poorly implemented Onboarding reduces the effectiveness of your team. One strategy I've used to ensure a smooth onboarding  is to implement 30/60/90 day plans. These plans outline specific goals and objectives for the new employee to achieve during their first three months on the job. In this post, we'll explore how to create effective 30/60/90 day plans to improve onboarding.

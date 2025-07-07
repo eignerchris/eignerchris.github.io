@@ -1,6 +1,7 @@
 ---
 title: How to Manage Up
 layout: post
+background: "/assets/images/hero.jpg"
 ---
 
 One area I work on with engineers and new managers is how to "manage up". Before we dig into managing up, it's worth covering "managing down" as this will help us compare and contrast these two functions.
