@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Monte Carlo Simulator</title>
+    <link rel="stylesheet" href="assets/css/calculators.css">
+    <style>
+        /* Additional styles for Monte Carlo simulator */
+        .simulation-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        #monteCarloChart {
+            width: 100%;
+            height: 450px;
+            border-radius: 4px;
+        }
+        
+        .simulation-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        
+        .simulation-control-group {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .simulation-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #495057;
+            white-space: nowrap;
+        }
+        
+        .simulation-input label {
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .simulation-input input {
+            width: 70px;
+            height: 36px;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .simulation-input input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .run-simulation-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            white-space: nowrap;
+        }
+        
+        .run-simulation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .run-simulation-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .simulation-status {
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .probability-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .success-rate-row {
+            display: flex;
+            justify-content: center;
+        }
+
+        .success-rate-row .probability-card {
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .percentiles-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        
+        .probability-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .probability-card.success {
+            background: linear-gradient(135deg, #d1f2eb 0%, #a3e4d7 100%);
+            border-color: #52c41a;
+        }
+        
+        .probability-card.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-color: #fadb14;
+        }
+        
+        .probability-card.danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-color: #ff4d4f;
+        }
+        
+        .probability-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            line-height: 1.1;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .probability-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #495057;
+        }
+        
+        .section-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin: 0 0 1rem 0;
+            font-style: italic;
+        }
+
+        .income-events {
+            margin: 0;
+        }
+
+        .income-event {
+            display: grid;
+            grid-template-columns: 2fr 1fr 0.8fr 0.8fr 0.8fr 1fr 50px;
+            gap: 0.75rem;
+            align-items: end;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Adjust grid when sidebar is expanded and space is constrained */
+        @media (max-width: 1400px) {
+            .income-event {
+                grid-template-columns: 1.8fr 0.9fr 0.7fr 0.7fr 0.7fr 0.9fr 48px;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .income-event {
+                grid-template-columns: 1.5fr 0.8fr 0.6fr 0.6fr 0.6fr 0.8fr 45px;
+                gap: 0.5rem;
+            }
+            
+            .remove-event-btn {
+                font-size: 1rem;
+                padding: 0.4rem;
+                height: 40px;
+                width: 40px;
+            }
+        }
+
+        .income-event-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .income-event-field label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            min-height: 1.2rem; /* Ensure consistent label height */
+        }
+
+        /* Ensure remove button aligns with input fields */
+        .income-event-field:last-child {
+            justify-content: flex-end;
+        }
+
+        .income-event-field input,
+        .income-event-field select {
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            height: 48px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        .income-event-field input:focus,
+        .income-event-field select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .income-event-field select {
+            background: white;
+            cursor: pointer;
+        }
+
+        /* Custom Tooltip Styles */
+        .tooltip-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 12px;
+            line-height: 16px;
+            margin-left: 6px;
+            cursor: help;
+            position: relative;
+            font-weight: bold;
+        }
+
+        .tooltip-icon:hover {
+            background-color: #495057;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 280px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -140px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-weight: normal;
+            text-transform: none !important;
+            letter-spacing: normal !important;
+        }
+
+        .tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Responsive tooltip positioning */
+        @media (max-width: 768px) {
+            .tooltip .tooltip-text {
+                width: 250px;
+                margin-left: -125px;
+                font-size: 0.8rem;
+                left: -100px;
+            }
+        }
+
+        .remove-event-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            height: 48px;
+            width: 48px;
+            transition: all 0.3s ease;
+            margin-top: auto; /* Align with input fields */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .remove-event-btn:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .add-event-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .add-event-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        
+        .simulation-legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .legend-line {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        
+        .success-zone { background: rgba(82, 196, 26, 0.3); }
+        .failure-zone { background: rgba(255, 77, 79, 0.3); }
+
+        /* Statistics Table Styles */
+        .stats-section {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .stats-section h4 {
+            margin: 0 0 1rem 0;
+            color: #495057;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .stats-table {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            min-width: 0; /* Allow flex items to shrink */
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.2;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .stat-value.positive {
+            color: #28a745;
+        }
+
+        .stat-value.negative {
+            color: #dc3545;
+        }
+
+        .stat-value.neutral {
+            color: #6c757d;
+        }
+
+        /* Override the two-column layout for retirement simulator */
+        .retirement-layout {
+            display: flex !important;
+            padding: 0 !important;
+            gap: 0;
+            min-height: 100vh;
+        }
+
+        /* Scenario Sidebar Styles */
+        .scenario-sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            border-right: 2px solid #e9ecef;
+            padding: 1rem;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .scenario-sidebar.collapsed {
+            width: 50px;
+            padding: 1rem 0.5rem;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 1rem;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            color: #495057;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-toggle {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: #5a6268;
+        }
+
+        .scenario-controls {
+            margin-bottom: 1.5rem;
+        }
+
+        .new-scenario-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .new-scenario-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .scenario-list h4 {
+            margin: 0 0 1rem 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .scenario-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scenario-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        }
+
+        .scenario-item.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .scenario-item-content {
+            flex: 1;
+        }
+
+        .scenario-item-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .scenario-item-details {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .scenario-item-actions {
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .scenario-item:hover .scenario-item-actions {
+            opacity: 1;
+        }
+
+        .scenario-action-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .scenario-action-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .scenario-item.active .scenario-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        /* Scenario Header Styles */
+        .scenario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .scenario-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            border: 2px solid transparent;
+        }
+
+        .scenario-title:hover {
+            background: #f8f9fa;
+            border-color: #e9ecef;
+        }
+
+        .scenario-title[contenteditable="true"] {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .scenario-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .save-scenario-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .save-scenario-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Collapsed Sidebar Styles */
+        .scenario-sidebar.collapsed .sidebar-header h3,
+        .scenario-sidebar.collapsed .scenario-controls,
+        .scenario-sidebar.collapsed .scenario-list {
+            display: none;
+        }
+
+        .scenario-sidebar.collapsed .sidebar-toggle span {
+            transform: rotate(180deg);
+        }
+
+        /* Notification Animation */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .retirement-inputs {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 2rem auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        /* Input row layout for 4 columns */
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        
+        /* Two column layout for market assumptions */
+        .input-row.two-columns {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        /* Retirement-specific overrides */
+        .compact-input-group label {
+            min-height: 2.5em;
+            line-height: 1.3;
+        }
+
+        .compact-input-group input {
+            padding: 0.75rem 3.5rem 0.75rem 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            height: 48px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .compact-input-group input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .compact-input-group .unit {
+            right: 1rem;
+            bottom: 12px;
+            font-weight: 500;
+        }
+        
+        .retirement-results {
+            width: 100%;
+            max-width: none;
+        }
+        
+        .full-width-chart {
+            width: 100%;
+            margin: 1.5rem 0;
+        }
+        
+        .full-width-chart canvas {
+            width: 100% !important;
+            height: 500px !important;
+        }
+
+        @media (max-width: 768px) {
+            .simulation-controls {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
+            
+            .simulation-control-group {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.75rem;
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .run-simulation-btn {
+                width: 100%;
+            }
+            
+            .simulation-input {
+                justify-content: center;
+            }
+            
+            .income-event {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+                padding: 1rem;
+            }
+
+            .income-event-field input,
+            .income-event-field select {
+                font-size: 1rem;
+            }
+
+            .remove-event-btn {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .probability-value {
+                font-size: 1.4rem;
+            }
+            
+            .percentiles-row {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .success-rate-row .probability-card {
+                max-width: none;
+            }
+            
+            .retirement-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-section {
+                padding: 1rem;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 1.2rem;
+            }
+
+            /* Mobile Sidebar Styles */
+            .retirement-layout {
+                flex-direction: column;
+            }
+
+            .scenario-sidebar {
+                width: 100%;
+                max-height: 200px;
+                border-right: none;
+                border-bottom: 2px solid #e9ecef;
+            }
+
+            .scenario-sidebar.collapsed {
+                max-height: 60px;
+                width: 100%;
+            }
+
+            .sidebar-header {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .scenario-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .scenario-title {
+                font-size: 1.5rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Retirement Monte Carlo Simulator</h1>
+            <p>Run thousands of scenarios to test your retirement plan's probability of success</p>
+        </header>
+
+        <nav class="navigation">
+            <a href="retirement-simulator.html" class="nav-link active">Retirement Simulator</a>
+            <a href="net-worth-simulator.html" class="nav-link">Net Worth Simulator</a>
+            <a href="fire-calculator.html" class="nav-link">FIRE Calculator</a>
+        </nav>
+
+        <div class="calculator-wrapper retirement-layout">
+            <!-- Scenario Sidebar -->
+            <div class="scenario-sidebar" id="scenario-sidebar">
+                <div class="sidebar-header">
+                    <h3>📋 Scenarios</h3>
+                    <button class="sidebar-toggle" id="sidebar-toggle">
+                        <span>←</span>
+                    </button>
+                </div>
+                
+                <div class="scenario-controls">
+                    <button class="new-scenario-btn" id="new-scenario" title="Create a new scenario to test different retirement planning assumptions and compare outcomes">+ New Scenario</button>
+                </div>
+                
+                <div class="scenario-list">
+                    <h4>Saved Scenarios</h4>
+                    <div id="scenario-list-container">
+                        <!-- Scenarios will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content"  id="main-content">
+            
+            <!-- Scenario Header -->
+            <div class="scenario-header">
+                <h1 class="scenario-title" id="scenario-title" contenteditable="false" title="Click to edit scenario name">Default Scenario</h1>
+                <div class="scenario-actions">
+                    <button class="save-scenario-btn" id="save-scenario" title="Save the current settings as a named scenario for easy comparison and future reference">💾 Save</button>
+                </div>
+            </div>
+            
+            <div class="retirement-inputs">
+                <!-- Portfolio & Expenses Group -->
+                <div class="input-section-group">
+                    <h3>💰 Portfolio & Expenses</h3>
+                    
+                    <div class="input-row">
+                        <div class="compact-input-group">
+                            <label for="portfolio-value">Starting Portfolio Value</label>
+                            <input type="number" id="portfolio-value" value="1000000" step="10000" title="The total value of your investment portfolio at the start of retirement. Include all retirement accounts, taxable investments, and other liquid assets.">
+                            <span class="unit">$</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="annual-expenses">Annual Expenses</label>
+                            <input type="number" id="annual-expenses" value="60000" step="1000" title="Your expected annual living expenses in today's purchasing power. This will be adjusted for inflation during retirement.">
+                            <span class="unit">$/year</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="retirement-years">Retirement Duration</label>
+                            <input type="number" id="retirement-years" min="10" max="50" value="30" step="1" title="How many years you expect to be in retirement. Consider your life expectancy and health factors.">
+                            <span class="unit">years</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="withdrawal-rate">Initial Withdrawal Rate</label>
+                            <input type="number" id="withdrawal-rate" min="1" max="10" value="4.00" step="0.01" title="The percentage of your portfolio you plan to withdraw in the first year. The 4% rule is a common benchmark for sustainable withdrawals.">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Income Sources Group -->
+                <div class="input-section-group">
+                    <h3>� Retirement Income Sources</h3>
+                    <p class="section-description">Add all your retirement income sources like Social Security, pensions, part-time work, rental income, etc.</p>
+
+                    <div class="income-events">
+                        <div id="income-events-container">
+                            <!-- Dynamic income events will be added here -->
+                        </div>
+                        <button class="add-event-btn" id="add-income-event" title="Add additional income streams like pensions, social security, part-time work, or rental income">+ Add Income Event</button>
+                    </div>
+                </div>
+
+                <!-- Market Assumptions Group -->
+                <div class="input-section-group">
+                    <h3>📊 Market Assumptions</h3>
+                    
+                    <div class="input-row two-columns">
+                        <div class="compact-input-group">
+                            <label for="market-return">Expected Market Return</label>
+                            <input type="number" id="market-return" min="0" max="15" value="7.00" step="0.01" title="The average annual return you expect from your investment portfolio. Historical stock market returns average around 7-10% before inflation.">
+                            <span class="unit">%</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="inflation-rate">Expected Inflation Rate</label>
+                            <input type="number" id="inflation-rate" min="0" max="10" value="2.50" step="0.01" title="The expected annual inflation rate. The Federal Reserve targets 2% inflation, with historical averages around 2-3%.">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="retirement-results">
+                <div class="results-section">
+                    <h2>Monte Carlo Analysis 
+                        <span class="tooltip" style="margin-left: 8px;">
+                            <span class="tooltip-icon" style="font-size: 12px; width: 18px; height: 18px; line-height: 18px;">?</span>
+                            <span class="tooltip-text">Monte Carlo analysis is a mathematical technique that runs thousands of different market scenarios to test how your retirement plan performs under various conditions. Instead of assuming markets will behave perfectly, it simulates realistic ups and downs, crashes and booms, to give you a probability-based view of your retirement success. This helps you understand the range of possible outcomes and plan accordingly.</span>
+                        </span>
+                    </h2>
+                    
+                    <div class="simulation-controls">
+                        <div class="simulation-control-group">
+                            <button class="run-simulation-btn" id="run-simulation" title="Run thousands of Monte Carlo simulations to test your retirement plan under various market conditions">Run Monte Carlo Simulation</button>
+                            <div class="simulation-input">
+                                <label>Simulations:</label>
+                                <input type="number" id="num-simulations" min="100" max="10000" value="1000" step="100" title="Number of different market scenarios to simulate. More simulations provide more accurate results but take longer to compute.">
+                                <span>runs</span>
+                            </div>
+                        </div>
+                        <div class="simulation-status" id="simulation-status">Configure your parameters and run simulation</div>
+                    </div>
+
+                    <div class="simulation-container full-width-chart">
+                        <canvas id="monteCarloChart" title="Interactive chart showing possible portfolio outcomes over time. Each line represents a different market scenario simulation."></canvas>
+                    </div>
+
+                <div class="simulation-legend">
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: #52c41a; height: 3px;"></div>
+                        <span>90th Percentile (Optimistic)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: #2c3e50; height: 4px;"></div>
+                        <span>Median Outcome</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: #ff7875; height: 3px;"></div>
+                        <span>10th Percentile (Conservative)</span>
+                    </div>
+                </div>
+
+                <!-- Statistics Table for Median Results -->
+                <div class="stats-section" id="stats-section" style="display: none;">
+                    <h4>📊 Median Scenario Statistics</h4>
+                    <div class="stats-table">
+                        <div class="stats-row">
+                            <div class="stat-item" title="How much money you'd have left at the end of retirement in the median scenario">
+                                <div class="stat-label">Final Net Worth</div>
+                                <div class="stat-value" id="stat-final-worth">--</div>
+                            </div>
+                            <div class="stat-item" title="The average annual income you can safely withdraw from your portfolio during retirement">
+                                <div class="stat-label">Annual Retirement Income</div>
+                                <div class="stat-value" id="stat-withdrawal-rate">--</div>
+                            </div>
+                            <div class="stat-item" title="Total amount withdrawn from your portfolio over the entire retirement period">
+                                <div class="stat-label">Total Withdrawn</div>
+                                <div class="stat-value" id="stat-total-withdrawn">--</div>
+                            </div>
+                        </div>
+                        <div class="stats-row">
+                            <div class="stat-item" title="How much your portfolio grew (or shrank) including all withdrawals and market performance">
+                                <div class="stat-label">Portfolio Growth</div>
+                                <div class="stat-value" id="stat-portfolio-growth">--</div>
+                            </div>
+                            <div class="stat-item" title="The total additional cost of goods and services due to inflation over your retirement">
+                                <div class="stat-label">Inflation Impact</div>
+                                <div class="stat-value" id="stat-inflation-impact">--</div>
+                            </div>
+                            <div class="stat-item" title="How many years your portfolio lasted in the median scenario">
+                                <div class="stat-label">Years Sustained</div>
+                                <div class="stat-value" id="stat-years-sustained">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="probability-grid">
+                    <div class="success-rate-row">
+                        <div class="probability-card" id="success-rate-card" title="Percentage of simulations where your portfolio lasted the full retirement period without running out of money">
+                            <div class="probability-label">Success Rate</div>
+                            <div class="probability-value" id="success-rate">--%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="percentiles-row">
+                        <div class="probability-card" title="In the worst 10% of market scenarios, this is how much money you'd have left at the end of retirement">
+                            <div class="probability-label">10th Percentile</div>
+                            <div class="probability-value" id="percentile-10">--</div>
+                        </div>
+                        
+                        <div class="probability-card" title="The median outcome - in half of the simulations you'd have more than this amount, and in half you'd have less">
+                            <div class="probability-label">50th Percentile</div>
+                            <div class="probability-value" id="percentile-50">--</div>
+                        </div>
+                        
+                        <div class="probability-card" title="In the best 10% of market scenarios, this is how much money you'd have left at the end of retirement">
+                            <div class="probability-label">90th Percentile</div>
+                            <div class="probability-value" id="percentile-90">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                    <div class="scenario-analysis">
+                        <h4>Simulation Results</h4>
+                        <div id="monte-carlo-analysis" class="scenario-message">
+                            Run the simulation to see detailed analysis of your retirement plan's probability of success.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div> <!-- Close main-content -->
+        </div>
+
+        <footer>
+            <p><small>Monte Carlo simulations provide probabilistic estimates based on historical market data and assumptions. Results are for educational purposes and should not replace professional financial advice.</small></p>
+        </footer>
+    </div>
+
+    <script src="assets/js/retirement-simulator.js"></script>
+    <script>
+        // Initialize tooltip icons
+        document.addEventListener('DOMContentLoaded', function() {
+            function addTooltipIcons() {
+                // Define tooltips for form inputs
+                const tooltips = {
+                    'portfolio-value': 'The total value of your investment portfolio at the start of retirement. Include all retirement accounts (401k, IRA, Roth IRA), taxable investments, and other liquid assets you plan to use for retirement.',
+                    'annual-expenses': 'Your expected annual living expenses in today\'s purchasing power. Include housing, food, healthcare, transportation, and discretionary spending. This will be automatically adjusted for inflation during retirement.',
+                    'retirement-years': 'How many years you expect to be in retirement. Consider your life expectancy, health factors, and family history. The average retirement lasts 15-30 years.',
+                    'withdrawal-rate': 'The percentage of your portfolio you plan to withdraw in the first year of retirement. The famous "4% rule" suggests this rate for a 30-year retirement, but it may vary based on market conditions and personal circumstances.',
+                    'market-return': 'The average annual return you expect from your investment portfolio before inflation. Historical stock market returns average 7-10% annually, but this includes both good and bad years. A diversified portfolio might average 6-8%.',
+                    'inflation-rate': 'The expected annual inflation rate, which erodes purchasing power over time. The Federal Reserve targets 2% inflation, with historical averages around 2-3%. Higher inflation reduces what your money can buy.',
+                    'num-simulations': 'Number of different market scenarios to simulate using Monte Carlo analysis. More simulations (1000+) provide more accurate results but take longer to compute. This tests your plan under various market conditions.'
+                };
+
+                Object.keys(tooltips).forEach(inputId => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        const label = input.closest('.compact-input-group').querySelector('label') || 
+                                     input.closest('.input-field').querySelector('label') ||
+                                     input.previousElementSibling;
+                        if (label && !label.querySelector('.tooltip-icon')) {
+                            // Create tooltip container
+                            const tooltipContainer = document.createElement('span');
+                            tooltipContainer.className = 'tooltip';
+                            
+                            // Create tooltip icon
+                            const icon = document.createElement('span');
+                            icon.className = 'tooltip-icon';
+                            icon.textContent = '?';
+                            
+                            // Create tooltip text
+                            const tooltipText = document.createElement('span');
+                            tooltipText.className = 'tooltip-text';
+                            tooltipText.textContent = tooltips[inputId];
+                            
+                            // Assemble tooltip
+                            tooltipContainer.appendChild(icon);
+                            tooltipContainer.appendChild(tooltipText);
+                            
+                            // Add to label
+                            label.appendChild(tooltipContainer);
+                        }
+                    }
+                });
+
+                // Add tooltips to buttons
+                const buttonTooltips = {
+                    'run-simulation': 'Run thousands of Monte Carlo simulations to test your retirement plan under various market conditions',
+                    'add-income-event': 'Add additional income streams like pensions, social security, part-time work, or rental income',
+                    'new-scenario': 'Create a new scenario to test different retirement planning assumptions and compare outcomes',
+                    'save-scenario': 'Save the current settings as a named scenario for easy comparison and future reference'
+                };
+
+                Object.keys(buttonTooltips).forEach(buttonId => {
+                    const button = document.getElementById(buttonId);
+                    if (button && !button.querySelector('.tooltip-icon')) {
+                        // Create tooltip container
+                        const tooltipContainer = document.createElement('span');
+                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.style.marginLeft = '8px';
+                        
+                        // Create tooltip icon
+                        const icon = document.createElement('span');
+                        icon.className = 'tooltip-icon';
+                        icon.textContent = '?';
+                        
+                        // Create tooltip text
+                        const tooltipText = document.createElement('span');
+                        tooltipText.className = 'tooltip-text';
+                        tooltipText.textContent = buttonTooltips[buttonId];
+                        
+                        // Assemble tooltip
+                        tooltipContainer.appendChild(icon);
+                        tooltipContainer.appendChild(tooltipText);
+                        
+                        // Add after button
+                        button.parentNode.insertBefore(tooltipContainer, button.nextSibling);
+                    }
+                });
+
+                // Add tooltips to statistics
+                const statTooltips = {
+                    'FINAL NET WORTH': 'How much money you\'d have left at the end of retirement in the median scenario. A positive number means your portfolio lasted with money remaining; zero or negative means you may have run out of money.',
+                    'ANNUAL RETIREMENT INCOME': 'The average annual income you can safely withdraw from your portfolio during retirement, based on your withdrawal rate and portfolio value. This represents your spending power each year.',
+                    'TOTAL WITHDRAWN': 'Total amount withdrawn from your portfolio over the entire retirement period, including both living expenses and any additional withdrawals. This shows the cumulative impact of your retirement spending.',
+                    'PORTFOLIO GROWTH': 'How much your portfolio grew (or shrank) including all withdrawals and market performance. This accounts for investment returns minus your withdrawals and shows the net change in portfolio value.',
+                    'INFLATION IMPACT': 'The total additional cost of goods and services due to inflation over your retirement. This shows how much more expensive things become, reducing your purchasing power over time.',
+                    'YEARS SUSTAINED': 'How many years your portfolio lasted in the median scenario before running out of money. If this equals your retirement duration, your plan succeeded in the median case.'
+                };
+
+                document.querySelectorAll('.stat-label').forEach(label => {
+                    const statName = label.textContent.trim().toUpperCase();
+                    if (statTooltips[statName] && !label.querySelector('.tooltip-icon')) {
+                        // Create tooltip container
+                        const tooltipContainer = document.createElement('span');
+                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.style.marginLeft = '6px';
+                        
+                        // Create tooltip icon
+                        const icon = document.createElement('span');
+                        icon.className = 'tooltip-icon';
+                        icon.textContent = '?';
+                        icon.style.fontSize = '10px';
+                        icon.style.width = '14px';
+                        icon.style.height = '14px';
+                        icon.style.lineHeight = '14px';
+                        
+                        // Create tooltip text
+                        const tooltipText = document.createElement('span');
+                        tooltipText.className = 'tooltip-text';
+                        tooltipText.textContent = statTooltips[statName];
+                        
+                        // Assemble tooltip
+                        tooltipContainer.appendChild(icon);
+                        tooltipContainer.appendChild(tooltipText);
+                        
+                        // Add to label
+                        label.appendChild(tooltipContainer);
+                    }
+                });
+
+                // Add tooltips to probability cards
+                const probabilityTooltips = {
+                    'SUCCESS RATE': 'Percentage of simulations where your portfolio lasted the full retirement period without running out of money. Higher percentages indicate a more secure retirement plan. Generally, 80%+ is considered good, 90%+ is excellent.',
+                    '10TH PERCENTILE': 'In the worst 10% of market scenarios (like major recessions or crashes), your final portfolio value would be this amount or higher. This represents "stress testing" your plan against poor market conditions.',
+                    '50TH PERCENTILE': 'The middle result - in half of all scenarios, your final portfolio value would be higher than this, and in half it would be lower. This represents typical market performance over your retirement.',
+                    '90TH PERCENTILE': 'In the best 10% of market scenarios (strong bull markets), your final portfolio value would be this amount or higher. This represents excellent market conditions and shows your upside potential.'
+                };
+
+                document.querySelectorAll('.probability-label').forEach(label => {
+                    const labelText = label.textContent.trim().toUpperCase();
+                    if (probabilityTooltips[labelText] && !label.querySelector('.tooltip-icon')) {
+                        // Create tooltip container
+                        const tooltipContainer = document.createElement('span');
+                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.style.marginLeft = '6px';
+                        
+                        // Create tooltip icon
+                        const icon = document.createElement('span');
+                        icon.className = 'tooltip-icon';
+                        icon.textContent = '?';
+                        icon.style.fontSize = '10px';
+                        icon.style.width = '14px';
+                        icon.style.height = '14px';
+                        icon.style.lineHeight = '14px';
+                        
+                        // Create tooltip text
+                        const tooltipText = document.createElement('span');
+                        tooltipText.className = 'tooltip-text';
+                        tooltipText.textContent = probabilityTooltips[labelText];
+                        
+                        // Assemble tooltip
+                        tooltipContainer.appendChild(icon);
+                        tooltipContainer.appendChild(tooltipText);
+                        
+                        // Add to label
+                        label.appendChild(tooltipContainer);
+                    }
+                });
+
+                // Function to add tooltips to income events
+                function addIncomeEventTooltips() {
+                    const incomeTooltips = {
+                        'Event Name': 'A descriptive name for this income source (e.g., "Social Security", "Pension", "Part-time work", "Rental income")',
+                        'Type': 'One-time: A single payment in one year. Recurring: Annual payments that continue for multiple years.',
+                        'Amount': 'The annual dollar amount you expect to receive from this income source in today\'s purchasing power.',
+                        'Start Year': 'Which year of retirement this income begins (Year 1 = first year of retirement).',
+                        'End Year': 'Which year of retirement this income ends. For recurring income, this is the last year you\'ll receive it.',
+                        'Inflation Adj.': 'Whether this income increases with inflation over time. Social Security typically adjusts for inflation, while some pensions do not.'
+                    };
+
+                    document.querySelectorAll('.income-event-field label').forEach(label => {
+                        const labelText = label.textContent.trim();
+                        if (incomeTooltips[labelText] && !label.querySelector('.tooltip-icon')) {
+                            // Create tooltip container
+                            const tooltipContainer = document.createElement('span');
+                            tooltipContainer.className = 'tooltip';
+                            tooltipContainer.style.marginLeft = '6px';
+                            
+                            // Create tooltip icon
+                            const icon = document.createElement('span');
+                            icon.className = 'tooltip-icon';
+                            icon.textContent = '?';
+                            icon.style.fontSize = '10px';
+                            icon.style.width = '14px';
+                            icon.style.height = '14px';
+                            icon.style.lineHeight = '14px';
+                            
+                            // Create tooltip text
+                            const tooltipText = document.createElement('span');
+                            tooltipText.className = 'tooltip-text';
+                            tooltipText.textContent = incomeTooltips[labelText];
+                            
+                            // Assemble tooltip
+                            tooltipContainer.appendChild(icon);
+                            tooltipContainer.appendChild(tooltipText);
+                            
+                            // Add to label
+                            label.appendChild(tooltipContainer);
+                        }
+                    });
+                }
+
+                // Add income event tooltips initially and when new events are added
+                addIncomeEventTooltips();
+                
+                // Monitor for new income events
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                            mutation.addedNodes.forEach(function(node) {
+                                if (node.nodeType === 1 && node.classList && node.classList.contains('income-event')) {
+                                    setTimeout(addIncomeEventTooltips, 100);
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                observer.observe(document.getElementById('income-events-container') || document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+            
+            // Initialize tooltips on page load
+            addTooltipIcons();
+        });
+    </script>
+</body>
+</html>

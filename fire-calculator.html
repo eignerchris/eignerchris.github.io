@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIRE Calculator - Financial Independence Retire Early</title>
+    <link rel="stylesheet" href="assets/css/calculators.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FIRE Calculator</h1>
+            <p>Calculate your path to Financial Independence and Early Retirement</p>
+        </header>
+
+        <nav class="navigation">
+            <a href="retirement-simulator.html" class="nav-link">Retirement Simulator</a>
+            <a href="net-worth-simulator.html" class="nav-link">Net Worth Simulator</a>
+            <a href="fire-calculator.html" class="nav-link active">FIRE Calculator</a>
+        </nav>
+
+        <div class="fire-layout">
+            <div class="fire-inputs">
+                <!-- Personal Information Group -->
+                <div class="input-section-group">
+                    <h3>👤 Personal Information</h3>
+                    
+                    <div class="input-row two-columns">
+                        <div class="compact-input-group">
+                            <label for="current-age">Current Age</label>
+                            <input type="number" id="current-age" min="18" max="100" value="30" step="1">
+                            <span class="unit">years</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="target-age">Target Retirement Age</label>
+                            <input type="number" id="target-age" min="25" max="100" value="50" step="1">
+                            <span class="unit">years</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Information Group -->
+                <div class="input-section-group">
+                    <h3>💰 Financial Information</h3>
+                    
+                    <div class="input-row three-columns">
+                        <div class="compact-input-group">
+                            <label for="current-savings">Current Savings</label>
+                            <input type="number" id="current-savings" min="0" value="100000" step="1000">
+                            <span class="unit">$</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="monthly-contribution">Monthly Savings</label>
+                            <input type="number" id="monthly-contribution" min="0" value="3000" step="100">
+                            <span class="unit">$/month</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="annual-expenses">Annual Expenses in Retirement</label>
+                            <input type="number" id="annual-expenses" min="0" value="60000" step="1000">
+                            <span class="unit">$/year</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assumptions Group -->
+                <div class="input-section-group">
+                    <h3>📊 Assumptions</h3>
+                    
+                    <div class="input-row two-columns">
+                        <div class="compact-input-group">
+                            <label for="expected-return">Expected Annual Return</label>
+                            <input type="number" id="expected-return" min="0" max="20" value="7" step="0.1">
+                            <span class="unit">%</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="withdrawal-rate">Safe Withdrawal Rate</label>
+                            <input type="number" id="withdrawal-rate" min="1" max="10" value="4" step="0.1">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fire-results">
+                <div class="results-section-group">
+                    <h3>🎯 Your FIRE Results</h3>
+                    
+                    <div class="result-card main-result">
+                        <h4>Years Until Financial Independence</h4>
+                        <div class="result-value" id="years-to-fire">--</div>
+                        <div class="result-unit">years to FIRE</div>
+                    </div>
+
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <h5>Target FIRE Number</h5>
+                            <div class="result-value" id="fire-number">$0</div>
+                        </div>
+
+                        <div class="result-card">
+                            <h5>Projected Savings at Target Age</h5>
+                            <div class="result-value" id="projected-savings">$0</div>
+                        </div>
+
+                        <div class="result-card">
+                            <h5>Monthly Savings Needed</h5>
+                            <div class="result-value" id="required-monthly">$0</div>
+                        </div>
+
+                        <div class="result-card">
+                            <h5>Current Progress</h5>
+                            <div class="result-value" id="current-progress">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-section">
+                        <h5>Progress to FIRE</h5>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text">$0 of $0</div>
+                    </div>
+
+                    <div class="scenario-analysis">
+                        <h5>Scenario Analysis</h5>
+                        <div id="scenario-message" class="scenario-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p><small>This calculator provides estimates for educational purposes only. Consult a financial advisor for personalized advice.</small></p>
+        </footer>
+    </div>
+
+    <script src="assets/js/fire-calculator.js"></script>
+    <script>
+        // Initialize tooltip icons
+        document.addEventListener('DOMContentLoaded', function() {
+            function addTooltipIcons() {
+                // Define tooltips for form inputs
+                const tooltips = {
+                    'current-age': 'Your current age. This determines how many years you have to save and accumulate wealth before reaching your target retirement age.',
+                    'target-age': 'The age at which you want to achieve financial independence and retire early. Common FIRE targets range from 40-60 years old, depending on your savings rate and lifestyle goals.',
+                    'current-savings': 'The total amount you currently have saved and invested. Include all retirement accounts (401k, IRA), taxable investments, savings accounts, and other liquid assets that will grow toward your FIRE goal.',
+                    'monthly-contribution': 'How much you plan to save and invest each month toward your FIRE goal. Higher savings rates dramatically reduce the time needed to reach financial independence.',
+                    'annual-expenses': 'Your expected annual living expenses during retirement in today\'s purchasing power. This is used to calculate your FIRE number using the 4% rule (FIRE number = annual expenses ÷ withdrawal rate).',
+                    'expected-return': 'The average annual return you expect from your investment portfolio before inflation. Historical stock market returns average 7-10% annually, but conservative planning might use 6-7%.',
+                    'withdrawal-rate': 'The percentage of your portfolio you plan to withdraw annually in retirement. The traditional "4% rule" suggests this rate for a 30+ year retirement, though some use 3-3.5% for extra safety.'
+                };
+
+                Object.keys(tooltips).forEach(inputId => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        const label = input.closest('.compact-input-group').querySelector('label') || 
+                                     input.closest('.input-group').querySelector('label');
+                        if (label && !label.querySelector('.tooltip-icon')) {
+                            // Create tooltip container
+                            const tooltipContainer = document.createElement('span');
+                            tooltipContainer.className = 'tooltip';
+                            
+                            // Create tooltip icon
+                            const icon = document.createElement('span');
+                            icon.className = 'tooltip-icon';
+                            icon.textContent = '?';
+                            
+                            // Create tooltip text
+                            const tooltipText = document.createElement('span');
+                            tooltipText.className = 'tooltip-text';
+                            tooltipText.textContent = tooltips[inputId];
+                            
+                            // Assemble tooltip
+                            tooltipContainer.appendChild(icon);
+                            tooltipContainer.appendChild(tooltipText);
+                            
+                            // Add to label
+                            label.appendChild(tooltipContainer);
+                        }
+                    }
+                });
+
+                // Add tooltips to result cards
+                const resultTooltips = {
+                    'YEARS UNTIL FINANCIAL INDEPENDENCE': 'Based on your current savings, monthly contributions, and expected returns, this is how many years it will take to reach your FIRE number. Increasing your savings rate is the most effective way to reduce this time.',
+                    'TARGET FIRE NUMBER': 'The total amount you need to have invested to retire safely. Calculated as your annual expenses divided by your safe withdrawal rate (typically 25x annual expenses for the 4% rule).',
+                    'PROJECTED SAVINGS AT TARGET AGE': 'How much money you will have accumulated by your target retirement age, based on your current savings and monthly contributions growing at your expected return rate.',
+                    'MONTHLY SAVINGS NEEDED': 'The monthly amount you need to save to reach your FIRE number by your target retirement age. If this is higher than your current monthly savings, you\'ll need to save more or retire later.',
+                    'CURRENT PROGRESS': 'What percentage of your FIRE number you have already achieved. This shows how far along your journey to financial independence you currently are.'
+                };
+
+                // Add tooltips to result cards (both h4 and h5 headings)
+                document.querySelectorAll('.result-card h4, .result-card h5').forEach(heading => {
+                    const headingText = heading.textContent.trim().toUpperCase();
+                    if (resultTooltips[headingText] && !heading.querySelector('.tooltip-icon')) {
+                        // Create tooltip container
+                        const tooltipContainer = document.createElement('span');
+                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.style.marginLeft = '6px';
+                        
+                        // Create tooltip icon
+                        const icon = document.createElement('span');
+                        icon.className = 'tooltip-icon';
+                        icon.textContent = '?';
+                        icon.style.fontSize = '10px';
+                        icon.style.width = '14px';
+                        icon.style.height = '14px';
+                        icon.style.lineHeight = '14px';
+                        
+                        // Create tooltip text
+                        const tooltipText = document.createElement('span');
+                        tooltipText.className = 'tooltip-text';
+                        tooltipText.textContent = resultTooltips[headingText];
+                        
+                        // Assemble tooltip
+                        tooltipContainer.appendChild(icon);
+                        tooltipContainer.appendChild(tooltipText);
+                        
+                        // Add to heading
+                        heading.appendChild(tooltipContainer);
+                    }
+                });
+
+                // Add tooltip to progress section
+                const progressSection = document.querySelector('.progress-section h5');
+                if (progressSection && !progressSection.querySelector('.tooltip-icon')) {
+                    const tooltipContainer = document.createElement('span');
+                    tooltipContainer.className = 'tooltip';
+                    tooltipContainer.style.marginLeft = '6px';
+                    
+                    const icon = document.createElement('span');
+                    icon.className = 'tooltip-icon';
+                    icon.textContent = '?';
+                    icon.style.fontSize = '10px';
+                    icon.style.width = '14px';
+                    icon.style.height = '14px';
+                    icon.style.lineHeight = '14px';
+                    
+                    const tooltipText = document.createElement('span');
+                    tooltipText.className = 'tooltip-text';
+                    tooltipText.textContent = 'Visual representation of how close you are to achieving financial independence. The bar fills up as your current savings approach your target FIRE number.';
+                    
+                    tooltipContainer.appendChild(icon);
+                    tooltipContainer.appendChild(tooltipText);
+                    progressSection.appendChild(tooltipContainer);
+                }
+
+                // Add tooltip to scenario analysis section
+                const scenarioSection = document.querySelector('.scenario-analysis h5');
+                if (scenarioSection && !scenarioSection.querySelector('.tooltip-icon')) {
+                    const tooltipContainer = document.createElement('span');
+                    tooltipContainer.className = 'tooltip';
+                    tooltipContainer.style.marginLeft = '6px';
+                    
+                    const icon = document.createElement('span');
+                    icon.className = 'tooltip-icon';
+                    icon.textContent = '?';
+                    icon.style.fontSize = '10px';
+                    icon.style.width = '14px';
+                    icon.style.height = '14px';
+                    icon.style.lineHeight = '14px';
+                    
+                    const tooltipText = document.createElement('span');
+                    tooltipText.className = 'tooltip-text';
+                    tooltipText.textContent = 'Analysis of your FIRE plan including recommendations for achieving your goals faster or adjusting your timeline based on your current savings rate and targets.';
+                    
+                    tooltipContainer.appendChild(icon);
+                    tooltipContainer.appendChild(tooltipText);
+                    scenarioSection.appendChild(tooltipContainer);
+                }
+            }
+            
+            // Initialize tooltips on page load
+            addTooltipIcons();
+        });
+    </script>
+</body>
+</html>

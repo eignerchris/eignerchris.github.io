@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net Worth Simulator - Wealth Growth Projection</title>
+    <link rel="stylesheet" href="assets/css/calculators.css">
+    <style>
+        /* Additional styles specific to the simulator */
+        .chart-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        #netWorthChart {
+            width: 100%;
+            height: 400px;
+            border-radius: 4px;
+        }
+        
+        .chart-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .time-selector {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .time-selector:hover {
+            background: #5a6fd8;
+        }
+        
+        .time-selector.active {
+            background: #2c3e50;
+        }
+        
+        .navigation {
+            background: #2c3e50;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            margin: 0 0.5rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link.active {
+            background-color: #667eea;
+        }
+        
+        .simulator-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0.5rem 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Net Worth Simulator</h1>
+            <p>Visualize your wealth growth over time with interactive projections</p>
+        </header>
+
+        <nav class="navigation">
+            <a href="retirement-simulator.html" class="nav-link">Retirement Simulator</a>
+            <a href="net-worth-simulator.html" class="nav-link active">Net Worth Simulator</a>
+            <a href="fire-calculator.html" class="nav-link">FIRE Calculator</a>
+        </nav>
+
+        <div class="simulator-layout">
+            <div class="simulator-inputs">
+                <!-- Current Financial Status Group -->
+                <div class="input-section-group">
+                    <h3>💼 Current Financial Status</h3>
+                    
+                    <div class="input-row two-columns">
+                        <div class="compact-input-group">
+                            <label for="current-net-worth">Current Net Worth</label>
+                            <input type="number" id="current-net-worth" value="50000" step="1000">
+                            <span class="unit">$</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="annual-income">Annual Income (Gross)</label>
+                            <input type="number" id="annual-income" value="75000" step="1000">
+                            <span class="unit">$/year</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings & Expenses Group -->
+                <div class="input-section-group">
+                    <h3>💰 Savings & Expenses</h3>
+                    
+                    <div class="input-row two-columns">
+                        <div class="compact-input-group">
+                            <label for="annual-expenses">Annual Expenses</label>
+                            <input type="number" id="annual-expenses" value="50000" step="1000">
+                            <span class="unit">$/year</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="annual-savings">Annual Savings/Investment</label>
+                            <input type="number" id="annual-savings" value="25000" step="1000">
+                            <span class="unit">$/year</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Growth Assumptions Group -->
+                <div class="input-section-group">
+                    <h3>📈 Growth Assumptions</h3>
+                    
+                    <div class="input-row three-columns">
+                        <div class="compact-input-group">
+                            <label for="investment-return">Expected Investment Return</label>
+                            <input type="number" id="investment-return" min="0" max="20" value="7" step="0.1">
+                            <span class="unit">%</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="income-growth">Annual Income Growth</label>
+                            <input type="number" id="income-growth" min="0" max="10" value="3" step="0.1">
+                            <span class="unit">%</span>
+                        </div>
+                        <div class="compact-input-group">
+                            <label for="inflation-rate">Inflation Rate</label>
+                            <input type="number" id="inflation-rate" min="0" max="10" value="2.5" step="0.1">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="simulator-results">
+                <div class="results-section-group">
+                    <h3>📊 Net Worth Projection</h3>
+                    
+                    <div class="chart-controls">
+                        <button class="time-selector active" data-years="10">10 Years</button>
+                        <button class="time-selector" data-years="20">20 Years</button>
+                        <button class="time-selector" data-years="30">30 Years</button>
+                        <button class="time-selector" data-years="40">40 Years</button>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="netWorthChart"></canvas>
+                    </div>
+
+                    <div class="simulator-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Net Worth in 10 Years</div>
+                            <div class="stat-value" id="net-worth-10y">$0</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Annual Savings</div>
+                            <div class="stat-value" id="annual-savings-display">$0</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Monthly Savings</div>
+                            <div class="stat-value" id="monthly-savings">$0</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Wealth Doubling Time</div>
+                            <div class="stat-value" id="doubling-time">-- years</div>
+                        </div>
+                    </div>
+
+                    <div class="scenario-analysis">
+                        <h5>Projection Analysis</h5>
+                        <div id="projection-message" class="scenario-message">
+                            Enter your financial information to see your net worth projection over time.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p><small>Projections are estimates based on your inputs and should not be considered financial advice. Actual results may vary due to market conditions and other factors.</small></p>
+        </footer>
+    </div>
+
+    <script src="assets/js/net-worth-simulator.js"></script>
+    <script>
+        // Initialize tooltip icons
+        document.addEventListener('DOMContentLoaded', function() {
+            function addTooltipIcons() {
+                // Define tooltips for form inputs
+                const tooltips = {
+                    'current-net-worth': 'Your total assets minus all debts and liabilities. Include savings, investments, home equity, retirement accounts, but subtract mortgages, credit card debt, loans, etc.',
+                    'annual-income': 'Your total gross income before taxes from all sources including salary, bonuses, freelance work, rental income, dividends, and other regular income streams.',
+                    'annual-expenses': 'Your total yearly spending including housing, food, transportation, insurance, entertainment, and all other living costs. This is typically your after-tax income minus what you save.',
+                    'annual-savings': 'The total amount you invest or save each year. This should include 401k contributions, IRA contributions, taxable investments, and cash savings for long-term goals.',
+                    'investment-return': 'The average annual return you expect from your investments before inflation. Historical stock market returns average 7-10% annually, but diversified portfolios might see 6-8%.',
+                    'income-growth': 'The annual percentage increase in your income due to raises, promotions, or career advancement. Typical ranges are 2-5% annually, though this varies by industry and career stage.',
+                    'inflation-rate': 'The expected annual inflation rate, which affects the purchasing power of your money over time. The Federal Reserve targets 2% inflation, with historical averages around 2-3%.'
+                };
+
+                Object.keys(tooltips).forEach(inputId => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        const label = input.closest('.compact-input-group').querySelector('label') || 
+                                     input.closest('.input-group').querySelector('label');
+                        if (label && !label.querySelector('.tooltip-icon')) {
+                            // Create tooltip container
+                            const tooltipContainer = document.createElement('span');
+                            tooltipContainer.className = 'tooltip';
+                            
+                            // Create tooltip icon
+                            const icon = document.createElement('span');
+                            icon.className = 'tooltip-icon';
+                            icon.textContent = '?';
+                            
+                            // Create tooltip text
+                            const tooltipText = document.createElement('span');
+                            tooltipText.className = 'tooltip-text';
+                            tooltipText.textContent = tooltips[inputId];
+                            
+                            // Assemble tooltip
+                            tooltipContainer.appendChild(icon);
+                            tooltipContainer.appendChild(tooltipText);
+                            
+                            // Add to label
+                            label.appendChild(tooltipContainer);
+                        }
+                    }
+                });
+
+                // Add tooltips to statistics
+                const statTooltips = {
+                    'NET WORTH IN 10 YEARS': 'Your projected total net worth after 10 years of saving and investing, assuming the growth rates you specified. This includes both your current net worth growing and your additional annual savings.',
+                    'ANNUAL SAVINGS': 'The amount you plan to save and invest each year. This money grows over time through compound interest and investment returns, becoming a major driver of wealth building.',
+                    'MONTHLY SAVINGS': 'Your annual savings amount divided by 12 months. This shows how much you need to set aside each month to reach your savings goals and build long-term wealth.',
+                    'WEALTH DOUBLING TIME': 'How many years it will take for your net worth to double based on your current savings rate and expected investment returns. The "Rule of 72" provides a quick estimate: 72 ÷ return rate = doubling time.'
+                };
+
+                document.querySelectorAll('.stat-label').forEach(label => {
+                    const statName = label.textContent.trim().toUpperCase();
+                    if (statTooltips[statName] && !label.querySelector('.tooltip-icon')) {
+                        // Create tooltip container
+                        const tooltipContainer = document.createElement('span');
+                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.style.marginLeft = '6px';
+                        
+                        // Create tooltip icon
+                        const icon = document.createElement('span');
+                        icon.className = 'tooltip-icon';
+                        icon.textContent = '?';
+                        icon.style.fontSize = '10px';
+                        icon.style.width = '14px';
+                        icon.style.height = '14px';
+                        icon.style.lineHeight = '14px';
+                        
+                        // Create tooltip text
+                        const tooltipText = document.createElement('span');
+                        tooltipText.className = 'tooltip-text';
+                        tooltipText.textContent = statTooltips[statName];
+                        
+                        // Assemble tooltip
+                        tooltipContainer.appendChild(icon);
+                        tooltipContainer.appendChild(tooltipText);
+                        
+                        // Add to label
+                        label.appendChild(tooltipContainer);
+                    }
+                });
+
+                // Add tooltips to time selector buttons
+                const timeButtonTooltips = {
+                    '10': 'View your net worth projection over the next 10 years - good for short to medium-term financial planning and goal setting.',
+                    '20': 'View your net worth projection over the next 20 years - ideal for major life planning like retirement preparation and wealth accumulation.',
+                    '30': 'View your net worth projection over the next 30 years - perfect for long-term retirement planning and understanding compound growth.',
+                    '40': 'View your net worth projection over the next 40 years - shows the full power of compound interest for younger investors and long-term wealth building.'
+                };
+
+                document.querySelectorAll('.time-selector').forEach(button => {
+                    const years = button.getAttribute('data-years');
+                    if (timeButtonTooltips[years] && !button.nextElementSibling?.classList?.contains('tooltip')) {
+                        // Create tooltip container
+                        const tooltipContainer = document.createElement('span');
+                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.style.marginLeft = '8px';
+                        
+                        // Create tooltip icon
+                        const icon = document.createElement('span');
+                        icon.className = 'tooltip-icon';
+                        icon.textContent = '?';
+                        icon.style.fontSize = '10px';
+                        icon.style.width = '14px';
+                        icon.style.height = '14px';
+                        icon.style.lineHeight = '14px';
+                        
+                        // Create tooltip text
+                        const tooltipText = document.createElement('span');
+                        tooltipText.className = 'tooltip-text';
+                        tooltipText.textContent = timeButtonTooltips[years];
+                        
+                        // Assemble tooltip
+                        tooltipContainer.appendChild(icon);
+                        tooltipContainer.appendChild(tooltipText);
+                        
+                        // Insert after button
+                        button.parentNode.insertBefore(tooltipContainer, button.nextSibling);
+                    }
+                });
+            }
+            
+            // Initialize tooltips on page load
+            addTooltipIcons();
+        });
+    </script>
+</body>
+</html>
