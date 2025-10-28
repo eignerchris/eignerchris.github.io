@@ -585,10 +585,48 @@
             flex: 1;
         }
 
+        .scenario-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
         .scenario-item-name {
             font-weight: 500;
             font-size: 0.9rem;
-            margin-bottom: 0.25rem;
+            flex: 1;
+        }
+
+        .scenario-success-rate {
+            font-weight: bold;
+            font-size: 0.85rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+            color: #495057;
+            min-width: 2.5rem;
+            text-align: center;
+        }
+
+        .scenario-success-rate.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .scenario-success-rate.warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .scenario-success-rate.danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .scenario-success-rate.not-simulated {
+            background-color: #e9ecef;
+            color: #6c757d;
         }
 
         .scenario-item-details {
@@ -889,6 +927,169 @@
                 text-align: center;
             }
         }
+
+        /* Smart Recommendations Styles */
+        .recommendations-section {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .recommendations-section h4 {
+            margin: 0 0 1rem 0;
+            color: #495057;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .recommendations-container {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .recommendation-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recommendation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .recommendation-card.priority-critical {
+            border-left: 4px solid #dc3545;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        }
+
+        .recommendation-card.priority-high {
+            border-left: 4px solid #fd7e14;
+            background: linear-gradient(135deg, #fff8f0 0%, #ffffff 100%);
+        }
+
+        .recommendation-card.priority-medium {
+            border-left: 4px solid #ffc107;
+            background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+        }
+
+        .recommendation-card.priority-low {
+            border-left: 4px solid #28a745;
+            background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+        }
+
+        .recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .recommendation-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+            line-height: 1.3;
+            flex: 1;
+        }
+
+        .recommendation-priority {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .priority-critical {
+            background: #dc3545;
+            color: white;
+        }
+
+        .priority-high {
+            background: #fd7e14;
+            color: white;
+        }
+
+        .priority-medium {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .priority-low {
+            background: #28a745;
+            color: white;
+        }
+
+        .recommendation-description {
+            color: #495057;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .recommendation-action {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: #1565c0;
+            font-weight: 500;
+        }
+
+        .recommendation-impact {
+            font-size: 0.8rem;
+            color: #6c757d;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .recommendation-impact::before {
+            content: "💡";
+            font-style: normal;
+        }
+
+        /* Responsive recommendations */
+        @media (max-width: 768px) {
+            .recommendations-section {
+                padding: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .recommendation-card {
+                padding: 0.75rem;
+            }
+            
+            .recommendation-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .recommendation-priority {
+                margin-left: 0;
+            }
+            
+            .recommendation-title {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -934,6 +1135,7 @@
                 <h1 class="scenario-title" id="scenario-title" contenteditable="false" title="Click to edit scenario name">Default Scenario</h1>
                 <div class="scenario-actions">
                     <button class="save-scenario-btn" id="save-scenario" title="Save the current settings as a named scenario for easy comparison and future reference">💾 Save</button>
+                    <button class="save-scenario-btn" id="share-scenario" title="Generate a shareable URL for this scenario that you can send to others">🔗 Share</button>
                 </div>
             </div>
             
@@ -968,8 +1170,8 @@
 
                 <!-- Income Sources Group -->
                 <div class="input-section-group">
-                    <h3>� Retirement Income Sources</h3>
-                    <p class="section-description">Add all your retirement income sources like Social Security, pensions, part-time work, rental income, etc.</p>
+                    <h3>💰 Retirement Income Sources</h3>
+                    <p class="section-description">Add all your retirement income sources like Social Security, pensions, part-time work, rental income, etc. <strong>Enter amounts as annual values</strong> (per year).</p>
 
                     <div class="income-events">
                         <div id="income-events-container">
@@ -1105,6 +1307,19 @@
                             Run the simulation to see detailed analysis of your retirement plan's probability of success.
                         </div>
                     </div>
+
+                    <!-- Smart Recommendations Panel -->
+                    <div class="recommendations-section" id="recommendations-section" style="display: none;">
+                        <h4>🤖 Smart Recommendations 
+                            <span class="tooltip" style="margin-left: 8px;">
+                                <span class="tooltip-icon" style="font-size: 12px; width: 18px; height: 18px; line-height: 18px;">?</span>
+                                <span class="tooltip-text">AI-powered analysis of your retirement plan with personalized recommendations to improve your success rate, optimize withdrawals, and reduce risks. Recommendations are prioritized by impact on your retirement security.</span>
+                            </span>
+                        </h4>
+                        <div id="recommendations-container" class="recommendations-container">
+                            <!-- Recommendations will be populated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
             </div> <!-- Close main-content -->
@@ -1167,7 +1382,8 @@
                     'run-simulation': 'Run thousands of Monte Carlo simulations to test your retirement plan under various market conditions',
                     'add-income-event': 'Add additional income streams like pensions, social security, part-time work, or rental income',
                     'new-scenario': 'Create a new scenario to test different retirement planning assumptions and compare outcomes',
-                    'save-scenario': 'Save the current settings as a named scenario for easy comparison and future reference'
+                    'save-scenario': 'Save the current settings as a named scenario for easy comparison and future reference',
+                    'share-scenario': 'Generate a shareable URL for this scenario that you can send to others for collaboration or review'
                 };
 
                 Object.keys(buttonTooltips).forEach(buttonId => {

@@ -198,6 +198,23 @@
                         </div>
                         
                         <div class="stat-card">
+                            <div class="stat-label">Net Worth in 20 Years</div>
+                            <div class="stat-value" id="net-worth-20y">$0</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Net Worth in 30 Years</div>
+                            <div class="stat-value" id="net-worth-30y">$0</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Net Worth in 40 Years</div>
+                            <div class="stat-value" id="net-worth-40y">$0</div>
+                        </div>
+                    </div>
+
+                    <div class="simulator-stats">
+                        <div class="stat-card">
                             <div class="stat-label">Annual Savings</div>
                             <div class="stat-value" id="annual-savings-display">$0</div>
                         </div>
@@ -210,6 +227,11 @@
                         <div class="stat-card">
                             <div class="stat-label">Wealth Doubling Time</div>
                             <div class="stat-value" id="doubling-time">-- years</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Savings Rate</div>
+                            <div class="stat-value" id="savings-rate">--%</div>
                         </div>
                     </div>
 
@@ -277,9 +299,13 @@
                 // Add tooltips to statistics
                 const statTooltips = {
                     'NET WORTH IN 10 YEARS': 'Your projected total net worth after 10 years of saving and investing, assuming the growth rates you specified. This includes both your current net worth growing and your additional annual savings.',
+                    'NET WORTH IN 20 YEARS': 'Your projected total net worth after 20 years of saving and investing. This longer timeframe shows the powerful effects of compound growth on your wealth building.',
+                    'NET WORTH IN 30 YEARS': 'Your projected total net worth after 30 years of saving and investing. This demonstrates how compound interest accelerates wealth accumulation over longer periods.',
+                    'NET WORTH IN 40 YEARS': 'Your projected total net worth after 40 years of saving and investing. This shows the full potential of long-term wealth building through consistent saving and investing.',
                     'ANNUAL SAVINGS': 'The amount you plan to save and invest each year. This money grows over time through compound interest and investment returns, becoming a major driver of wealth building.',
                     'MONTHLY SAVINGS': 'Your annual savings amount divided by 12 months. This shows how much you need to set aside each month to reach your savings goals and build long-term wealth.',
-                    'WEALTH DOUBLING TIME': 'How many years it will take for your net worth to double based on your current savings rate and expected investment returns. The "Rule of 72" provides a quick estimate: 72 ÷ return rate = doubling time.'
+                    'WEALTH DOUBLING TIME': 'How many years it will take for your net worth to double based on your current savings rate and expected investment returns. The "Rule of 72" provides a quick estimate: 72 ÷ return rate = doubling time.',
+                    'SAVINGS RATE': 'The percentage of your gross income that you save and invest each year. Financial experts typically recommend saving 10-20% of income, with higher rates leading to faster wealth accumulation.'
                 };
 
                 document.querySelectorAll('.stat-label').forEach(label => {
@@ -323,12 +349,7 @@
 
                 document.querySelectorAll('.time-selector').forEach(button => {
                     const years = button.getAttribute('data-years');
-                    if (timeButtonTooltips[years] && !button.nextElementSibling?.classList?.contains('tooltip')) {
-                        // Create tooltip container
-                        const tooltipContainer = document.createElement('span');
-                        tooltipContainer.className = 'tooltip';
-                        tooltipContainer.style.marginLeft = '8px';
-                        
+                    if (timeButtonTooltips[years] && !button.querySelector('.tooltip-icon')) {
                         // Create tooltip icon
                         const icon = document.createElement('span');
                         icon.className = 'tooltip-icon';
@@ -337,6 +358,12 @@
                         icon.style.width = '14px';
                         icon.style.height = '14px';
                         icon.style.lineHeight = '14px';
+                        icon.style.marginLeft = '4px';
+                        
+                        // Create tooltip container inside the button
+                        const tooltipContainer = document.createElement('span');
+                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.style.display = 'inline-block';
                         
                         // Create tooltip text
                         const tooltipText = document.createElement('span');
@@ -347,8 +374,8 @@
                         tooltipContainer.appendChild(icon);
                         tooltipContainer.appendChild(tooltipText);
                         
-                        // Insert after button
-                        button.parentNode.insertBefore(tooltipContainer, button.nextSibling);
+                        // Add tooltip directly inside the button
+                        button.appendChild(tooltipContainer);
                     }
                 });
             }

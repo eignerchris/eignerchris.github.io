@@ -1,3 +1,411 @@
+// Smart Recommendations Engine
+class RecommendationsEngine {
+    constructor() {
+        this.recommendations = [];
+        this.priorityLevels = {
+            CRITICAL: 'critical',
+            HIGH: 'high', 
+            MEDIUM: 'medium',
+            LOW: 'low'
+        };
+    }
+
+    analyzeScenario(simulationResults, inputValues, incomeEvents) {
+        this.recommendations = [];
+        
+        if (!simulationResults) {
+            return this.getInitialRecommendations(inputValues, incomeEvents);
+        }
+
+        // Analyze different aspects of the retirement plan
+        this.analyzeSuccessRate(simulationResults, inputValues);
+        this.analyzeWithdrawalRate(inputValues, simulationResults);
+        this.analyzePortfolioSize(simulationResults, inputValues);
+        this.analyzeIncomeStrategy(incomeEvents, inputValues, simulationResults);
+        this.analyzeMarketAssumptions(inputValues, simulationResults);
+        this.analyzeRiskFactors(simulationResults, inputValues);
+        this.analyzeTimeHorizon(inputValues);
+        
+        // Sort by priority
+        this.recommendations.sort((a, b) => {
+            const priorities = { critical: 4, high: 3, medium: 2, low: 1 };
+            return priorities[b.priority] - priorities[a.priority];
+        });
+
+        return this.recommendations.slice(0, 8); // Limit to top 8 recommendations
+    }
+
+    getInitialRecommendations(inputValues, incomeEvents) {
+        const recommendations = [];
+        
+        recommendations.push({
+            title: "🎯 Run Your First Monte Carlo Simulation",
+            description: "Get a probabilistic view of your retirement plan's success by running thousands of market scenarios.",
+            action: "Click 'Run Monte Carlo Simulation' to begin analysis",
+            priority: this.priorityLevels.HIGH,
+            category: "analysis",
+            impact: "Essential first step for retirement planning"
+        });
+
+        // Basic input validation recommendations
+        if (inputValues.withdrawalRate > 4.5) {
+            recommendations.push({
+                title: "⚠️ High Withdrawal Rate Detected",
+                description: `Your ${inputValues.withdrawalRate}% withdrawal rate is above the traditional 4% safe withdrawal rate.`,
+                action: "Consider reducing to 3.5-4% for safer long-term sustainability",
+                priority: this.priorityLevels.HIGH,
+                category: "withdrawal",
+                impact: "Could significantly improve plan success rate"
+            });
+        }
+
+        if (incomeEvents.length === 0) {
+            recommendations.push({
+                title: "💰 Add Income Sources",
+                description: "Consider adding Social Security, pensions, or part-time work to reduce portfolio dependency.",
+                action: "Use 'Add Income Event' to include additional retirement income",
+                priority: this.priorityLevels.MEDIUM,
+                category: "income",
+                impact: "Reduces required portfolio size and improves flexibility"
+            });
+        }
+
+        return recommendations;
+    }
+
+    analyzeSuccessRate(results, values) {
+        const successRate = results.successRate;
+        
+        // Calculate specific improvements needed
+        const currentWithdrawalRate = values.withdrawalRate * 100;
+        const currentExpenses = values.annualExpenses;
+        const currentPortfolio = values.portfolioValue;
+        
+        if (successRate < 60) {
+            // Calculate specific targets for improvement
+            const targetWithdrawalRate = Math.max(3.0, currentWithdrawalRate * 0.8);
+            const expenseReduction = Math.round((currentWithdrawalRate - targetWithdrawalRate) / currentWithdrawalRate * 100);
+            const additionalSavingsNeeded = Math.round((currentExpenses / 0.035) - currentPortfolio);
+            const delayYears = Math.min(10, Math.ceil((additionalSavingsNeeded) / (currentExpenses * 0.25))); // Cap at 10 years, assume 25% savings rate
+            
+            this.recommendations.push({
+                title: "🚨 Critical: Plan Needs Major Changes",
+                description: `Your plan succeeds only ${Math.round(successRate)}% of the time. This is too risky for retirement security.`,
+                action: `OPTION 1: Reduce expenses by ${expenseReduction}% (from $${this.formatCurrency(currentExpenses)} to $${this.formatCurrency(currentExpenses*(1-expenseReduction/100))} per year) OR OPTION 2: Work ${delayYears} more ${delayYears === 1 ? 'year' : 'years'} to save an additional ${this.formatCurrency(additionalSavingsNeeded)}`,
+                priority: this.priorityLevels.CRITICAL,
+                category: "success-rate",
+                impact: "Essential - could mean the difference between comfortable retirement and running out of money"
+            });
+        } else if (successRate < 75) {
+            const targetExpenses = currentExpenses * 0.9; // 10% reduction
+            const targetWithdrawal = Math.max(3.5, currentWithdrawalRate - 0.5);
+            
+            this.recommendations.push({
+                title: "⚠️ Moderate Risk - Needs Improvement",
+                description: `${Math.round(successRate)}% success rate leaves significant risk of running out of money.`,
+                action: `Reduce expenses to ${this.formatCurrency(targetExpenses)} per year (${Math.round((currentExpenses-targetExpenses)/currentExpenses*100)}% cut) OR lower withdrawal rate to ${targetWithdrawal.toFixed(1)}%`,
+                priority: this.priorityLevels.HIGH,
+                category: "success-rate",
+                impact: "Could improve success rate to 85%+ with these changes"
+            });
+        } else if (successRate < 85) {
+            const expenseReduction = Math.round(currentExpenses * 0.05); // 5% reduction
+            
+            this.recommendations.push({
+                title: "📈 Good Plan - Minor Optimization",
+                description: `${Math.round(successRate)}% success rate is good but could reach excellent (90%+) with small adjustments.`,
+                action: `Reduce expenses by ${this.formatCurrency(expenseReduction)} per year OR delay retirement by 1 year OR increase starting portfolio by ${this.formatCurrency(100000)}`,
+                priority: this.priorityLevels.MEDIUM,
+                category: "optimization",
+                impact: "Moves your plan from good to excellent with minimal sacrifice"
+            });
+        } else if (successRate >= 95) {
+            this.recommendations.push({
+                title: "🎉 Excellent Plan - Consider Optimizations",
+                description: `Outstanding ${Math.round(successRate)}% success rate! You have room for lifestyle improvements.`,
+                action: "Consider increasing annual expenses by 10-15% for a more comfortable retirement, or retiring 1-2 years earlier",
+                priority: this.priorityLevels.LOW,
+                category: "optimization",
+                impact: "Opportunity to enjoy retirement more while maintaining strong success rate"
+            });
+        }
+    }
+
+    analyzeWithdrawalRate(values, results = null) {
+        const withdrawalRate = values.withdrawalRate * 100;
+        const currentExpenses = values.annualExpenses;
+        
+        if (withdrawalRate > 5) {
+            const saferExpenses = values.portfolioValue * 0.04; // 4% rule
+            const reduction = Math.round(currentExpenses - saferExpenses);
+            
+            this.recommendations.push({
+                title: "⚡ Withdrawal Rate Dangerously High", 
+                description: `${withdrawalRate.toFixed(1)}% withdrawal rate dramatically increases failure risk. Historical data shows rates above 5% rarely sustain long retirements.`,
+                action: `Reduce expenses by ${this.formatCurrency(reduction)} per year (to ${this.formatCurrency(saferExpenses)} total) to achieve 4% withdrawal rate`,
+                priority: this.priorityLevels.HIGH,
+                category: "withdrawal",
+                impact: "Could improve success rate by 20-30 percentage points"
+            });
+        } else if (withdrawalRate > 4.5) {
+            const conservativeExpenses = values.portfolioValue * 0.035; // 3.5% rule
+            const reduction = Math.round(currentExpenses - conservativeExpenses);
+            
+            this.recommendations.push({
+                title: "📊 High Withdrawal Rate",
+                description: `${withdrawalRate.toFixed(1)}% exceeds the traditional 4% safe withdrawal rate. Consider a more conservative approach.`,
+                action: `Reduce expenses by ${this.formatCurrency(reduction)} per year to achieve 3.5% withdrawal rate for extra safety`,
+                priority: this.priorityLevels.MEDIUM,
+                category: "withdrawal",
+                impact: `Could improve success rate by ${results ? Math.min(15, 95 - results.successRate) : 10}-15 percentage points`
+            });
+        }
+    }
+
+    analyzePortfolioSize(results, values) {
+        const fireNumber = values.annualExpenses / values.withdrawalRate;
+        const shortfall = fireNumber - values.portfolioValue;
+        const successRate = results.successRate;
+        
+        // Only recommend portfolio growth if there's actually a problem
+        if (shortfall > 0 && successRate < 80) {
+            const yearsToSave = Math.min(15, Math.ceil(shortfall / (values.annualExpenses * 0.25))); // Cap at 15 years, assuming 25% savings rate
+            const annualSavingsNeeded = Math.round(shortfall / yearsToSave);
+            
+            this.recommendations.push({
+                title: "💼 Increase Portfolio Size",
+                description: `Your portfolio is ${this.formatCurrency(shortfall)} below the ideal FIRE number of ${this.formatCurrency(fireNumber)} for your current expenses.`,
+                action: `Save an additional ${this.formatCurrency(annualSavingsNeeded)} annually for ${yearsToSave} ${yearsToSave === 1 ? 'year' : 'years'}, OR work ${yearsToSave} extra ${yearsToSave === 1 ? 'year' : 'years'} while saving current amounts`,
+                priority: successRate < 60 ? this.priorityLevels.HIGH : this.priorityLevels.MEDIUM,
+                category: "portfolio",
+                impact: `Would increase success rate to approximately ${Math.min(95, successRate + 20)}%`
+            });
+        }
+
+        // Smart asset allocation based on both portfolio size AND success rate
+        if (values.portfolioValue < 500000 && successRate > 70) {
+            this.recommendations.push({
+                title: "🎯 Growth-Focused Strategy",
+                description: "Your plan is working well. With time to recover from market downturns, maximize growth potential.",
+                action: "Consider maintaining 80-90% stock allocation to maximize long-term growth",
+                priority: this.priorityLevels.LOW,
+                category: "allocation",
+                impact: "Could reduce years to retirement by 2-4 years"
+            });
+        } else if (values.portfolioValue > 2000000 && successRate > 90) {
+            this.recommendations.push({
+                title: "🛡️ Wealth Preservation Mode", 
+                description: "With a large portfolio and excellent success rate, you can afford to be more conservative.",
+                action: "Consider reducing to 50-60% stocks, 40-50% bonds for capital preservation",
+                priority: this.priorityLevels.LOW,
+                category: "allocation",
+                impact: "Maintains excellent success rate while reducing volatility"
+            });
+        }
+    }
+
+    analyzeIncomeStrategy(incomeEvents, values, results = null) {
+        const hasIncomeEvents = incomeEvents.length > 0;
+        const totalIncome = incomeEvents.reduce((sum, event) => sum + event.amount, 0);
+        const incomeCoveragePercent = totalIncome / values.annualExpenses * 100;
+        const successRate = results ? results.successRate : 50;
+        
+        // Only recommend income diversification if success rate is concerning
+        if (!hasIncomeEvents && successRate < 80) {
+            const neededIncome = Math.round(values.annualExpenses * 0.4);
+            this.recommendations.push({
+                title: "🔄 Add Guaranteed Income Sources",
+                description: "100% portfolio dependency is risky. Guaranteed income provides stability during market downturns.",
+                action: `Add ${this.formatCurrency(neededIncome)} per year in Social Security + part-time work to cover 40% of expenses`,
+                priority: successRate < 60 ? this.priorityLevels.HIGH : this.priorityLevels.MEDIUM,
+                category: "income",
+                impact: `Could improve success rate by 15-25 percentage points to ${Math.min(95, successRate + 20)}%`
+            });
+        } else if (hasIncomeEvents && incomeCoveragePercent < 30 && successRate < 75) {
+            const additionalNeeded = Math.round(values.annualExpenses * 0.4 - totalIncome);
+            this.recommendations.push({
+                title: "📈 Increase Guaranteed Income",
+                description: `Your ${Math.round(incomeCoveragePercent)}% income coverage is low. Target 40-50% for better stability.`,
+                action: `Add ${this.formatCurrency(additionalNeeded)} per year in additional income (Social Security, part-time work, or delayed retirement benefits)`,
+                priority: this.priorityLevels.MEDIUM,
+                category: "income", 
+                impact: `Could improve success rate by 10-15 percentage points`
+            });
+        }
+
+        // Social Security optimization - only if it would meaningfully help
+        const hasSocialSecurity = incomeEvents.some(event => 
+            event.name.toLowerCase().includes('social') || event.name.toLowerCase().includes('security')
+        );
+        
+        if (!hasSocialSecurity && successRate < 85) {
+            this.recommendations.push({
+                title: "🏛️ Optimize Social Security Strategy", 
+                description: "Social Security provides guaranteed, inflation-adjusted income that reduces portfolio risk.",
+                action: `Add Social Security benefits (${this.formatCurrency(25000)}-${this.formatCurrency(45000)} per year depending on earnings history). Consider delaying to age 70 for 32% higher benefits.`,
+                priority: successRate < 70 ? this.priorityLevels.HIGH : this.priorityLevels.MEDIUM,
+                category: "income",
+                impact: "Guaranteed income reduces sequence of returns risk significantly"
+            });
+        }
+    }
+
+    analyzeMarketAssumptions(values, results = null) {
+        const marketReturn = values.marketReturn * 100;
+        const inflationRate = values.inflationRate * 100;
+        const realReturn = marketReturn - inflationRate;
+        const successRate = results ? results.successRate : 50;
+        
+        // Only flag optimistic returns if the plan is already struggling
+        if (marketReturn > 8.5 && successRate < 70) {
+            const conservativeReturn = 7;
+            this.recommendations.push({
+                title: "📉 Overly Optimistic Return Assumption",
+                description: `${marketReturn}% expected return is above historical averages. Combined with your low success rate, this is concerning.`,
+                action: `Reduce expected return to ${conservativeReturn}% and re-run simulation to see realistic outcomes`,
+                priority: this.priorityLevels.HIGH,
+                category: "assumptions",
+                impact: "Reveals true risk level - may show need for significant plan changes"
+            });
+        } else if (marketReturn > 9 && successRate > 80) {
+            this.recommendations.push({
+                title: "📊 Stress Test Your Plan",
+                description: `${marketReturn}% return assumption is optimistic. Your plan looks good, but test with conservative assumptions.`,
+                action: "Re-run simulation with 6-7% returns to stress test your plan",
+                priority: this.priorityLevels.LOW,
+                category: "assumptions",
+                impact: "Confirms plan robustness under various market conditions"
+            });
+        }
+        
+        // Low real returns are only problematic if already showing poor results
+        if (realReturn < 3.5 && successRate < 75) {
+            const additionalSavings = Math.round(values.annualExpenses * 0.1);
+            this.recommendations.push({
+                title: "⚖️ Low Real Return Environment",
+                description: `${realReturn.toFixed(1)}% real return combined with ${Math.round(successRate)}% success rate suggests challenging conditions.`,
+                action: `Increase annual savings by ${this.formatCurrency(additionalSavings)} or delay retirement by 2-3 years to compensate for low expected returns`,
+                priority: this.priorityLevels.MEDIUM,
+                category: "assumptions",
+                impact: "Addresses the challenge of lower future market returns"
+            });
+        }
+
+        // High inflation warnings only if it's creating problems
+        if (inflationRate > 4 && results && results.percentile10 < values.portfolioValue * 0.3) {
+            this.recommendations.push({
+                title: "💸 High Inflation Risk",
+                description: `${inflationRate}% inflation assumption is creating significant purchasing power erosion in your projections.`,
+                action: "Consider 70-80% stock allocation and I-Bonds or TIPS for inflation protection",
+                priority: this.priorityLevels.MEDIUM,
+                category: "inflation",
+                impact: "Protects purchasing power against sustained high inflation"
+            });
+        }
+    }
+
+    analyzeRiskFactors(results, values) {
+        const p10 = results.percentile10;
+        const p50 = results.percentile50;
+        const successRate = results.successRate;
+        
+        // Sequence of returns risk - only if there's actual risk shown in results
+        if (p10 < values.portfolioValue * 0.2 && successRate < 85) {
+            this.recommendations.push({
+                title: "🌊 Sequence of Returns Risk",
+                description: "Poor early market returns could severely impact your plan. The 10th percentile outcome shows significant portfolio depletion.",
+                action: "Consider bond tent strategy: gradually increase bond allocation from 20% to 50% in the 10 years before retirement",
+                priority: this.priorityLevels.HIGH,
+                category: "risk",
+                impact: "Protects against early retirement market crashes"
+            });
+        }
+        
+        // Only recommend specific portfolio changes if there are actual problems
+        if (successRate < 70) {
+            this.recommendations.push({
+                title: "🎯 Portfolio Allocation Strategy",
+                description: `With a ${Math.round(successRate)}% success rate, consider a more defensive allocation as retirement approaches.`,
+                action: "Reduce equity allocation to 60-70% and increase high-quality bonds to 30-40%",
+                priority: this.priorityLevels.MEDIUM,
+                category: "allocation",
+                impact: "Reduces downside risk while maintaining growth potential"
+            });
+        }
+    }
+
+    analyzeTimeHorizon(values) {
+        const retirementYears = values.retirementYears;
+        
+        if (retirementYears > 35) {
+            this.recommendations.push({
+                title: "⏳ Long Retirement Period",
+                description: `${retirementYears}-year retirement increases longevity and inflation risk.`,
+                action: "Consider healthcare cost planning and long-term care insurance",
+                priority: this.priorityLevels.MEDIUM,
+                category: "planning",
+                impact: "Addresses extended retirement risks"
+            });
+        }
+        
+        if (retirementYears < 20) {
+            this.recommendations.push({
+                title: "⚡ Short Retirement Window",
+                description: `${retirementYears} years may be optimistic for longevity planning.`,
+                action: "Consider planning for 25-30 years to account for longevity risk",
+                priority: this.priorityLevels.MEDIUM,
+                category: "planning",
+                impact: "Prevents outliving your money"
+            });
+        }
+    }
+
+    formatRecommendations() {
+        return this.recommendations.map(rec => ({
+            ...rec,
+            priorityDisplay: this.getPriorityDisplay(rec.priority),
+            categoryIcon: this.getCategoryIcon(rec.category)
+        }));
+    }
+
+    getPriorityDisplay(priority) {
+        const displays = {
+            critical: { text: 'Critical', class: 'priority-critical' },
+            high: { text: 'High Priority', class: 'priority-high' },
+            medium: { text: 'Consider', class: 'priority-medium' },
+            low: { text: 'Optional', class: 'priority-low' }
+        };
+        return displays[priority] || displays.medium;
+    }
+
+    getCategoryIcon(category) {
+        const icons = {
+            'success-rate': '🎯',
+            'withdrawal': '📊', 
+            'portfolio': '💼',
+            'income': '💰',
+            'assumptions': '📈',
+            'risk': '🛡️',
+            'planning': '⏰',
+            'allocation': '🎯',
+            'analysis': '🔍',
+            'optimization': '⚡',
+            'inflation': '💸'
+        };
+        return icons[category] || '💡';
+    }
+
+    formatCurrency(amount) {
+        if (amount >= 1000000) {
+            return '$' + (amount / 1000000).toFixed(1) + 'M';
+        } else if (amount >= 1000) {
+            return '$' + Math.round(amount / 1000) + 'K';
+        } else {
+            return '$' + Math.round(amount).toLocaleString();
+        }
+    }
+}
+
 // Scenario Management System
 class ScenarioManager {
     constructor() {
@@ -128,6 +536,12 @@ class MonteCarloRetirementSimulator {
         // Initialize scenario management
         this.scenarioManager = new ScenarioManager();
         this.initializeScenarios();
+        this.initializeUrlSharing();
+        
+        // Initialize recommendations engine (will be initialized after DOM elements)
+        this.recommendationsEngine = null;
+        this.recommendationsSection = null;
+        this.recommendationsContainer = null;
         
         // Market parameters based on historical data
         this.marketParams = {
@@ -180,6 +594,7 @@ class MonteCarloRetirementSimulator {
         this.scenarioSidebar = document.getElementById('scenario-sidebar');
         this.newScenarioBtn = document.getElementById('new-scenario');
         this.saveScenarioBtn = document.getElementById('save-scenario');
+        this.shareScenarioBtn = document.getElementById('share-scenario');
         this.scenarioTitle = document.getElementById('scenario-title');
         this.scenarioListContainer = document.getElementById('scenario-list-container');
 
@@ -192,6 +607,15 @@ class MonteCarloRetirementSimulator {
             this.inflationRate,
             this.numSimulations
         ];
+        
+        // Initialize recommendations engine after DOM elements are ready
+        this.initializeRecommendations();
+    }
+    
+    initializeRecommendations() {
+        this.recommendationsEngine = new RecommendationsEngine();
+        this.recommendationsSection = document.getElementById('recommendations-section');
+        this.recommendationsContainer = document.getElementById('recommendations-container');
     }
 
     setupChart() {
@@ -206,7 +630,7 @@ class MonteCarloRetirementSimulator {
         this.canvas.style.height = rect.height + 'px';
 
         // Chart dimensions
-        this.chartWidth = rect.width - 100;
+        this.chartWidth = rect.width - 140; // Increased from 100 to give more space for right labels
         this.chartHeight = rect.height - 80;
         this.chartX = 60;
         this.chartY = 20;
@@ -227,6 +651,8 @@ class MonteCarloRetirementSimulator {
         this.inputs.forEach(input => {
             input.addEventListener('input', () => {
                 this.clearResults();
+                // Update recommendations when inputs change
+                setTimeout(() => this.updateRecommendations(), 100);
             });
         });
 
@@ -251,6 +677,10 @@ class MonteCarloRetirementSimulator {
 
         this.saveScenarioBtn.addEventListener('click', () => {
             this.saveCurrentScenario();
+        });
+
+        this.shareScenarioBtn.addEventListener('click', () => {
+            this.shareScenario();
         });
 
         this.scenarioTitle.addEventListener('click', () => {
@@ -302,8 +732,8 @@ class MonteCarloRetirementSimulator {
                 </select>
             </div>
             <div class="income-event-field">
-                <label>Amount</label>
-                <input type="number" placeholder="0" class="event-amount" step="1000">
+                <label>Annual Amount</label>
+                <input type="number" placeholder="25000" class="event-amount" step="1000">
             </div>
             <div class="income-event-field">
                 <label>Start Year</label>
@@ -322,7 +752,7 @@ class MonteCarloRetirementSimulator {
             </div>
             <div class="income-event-field">
                 <label>&nbsp;</label>
-                <button class="remove-event-btn" onclick="this.parentElement.remove()" title="Remove this income event">×</button>
+                <button class="remove-event-btn" onclick="this.parentElement.parentElement.remove()" title="Remove this income event">×</button>
             </div>
         `;
         
@@ -549,6 +979,9 @@ class MonteCarloRetirementSimulator {
         // Re-enable button
         this.runSimulationBtn.disabled = false;
         this.simulationStatus.textContent = `Completed ${values.numSimulations} simulations`;
+        
+        // Update recommendations after simulation
+        this.updateRecommendations();
     }
 
     updateResults(results, values) {
@@ -697,6 +1130,75 @@ class MonteCarloRetirementSimulator {
         }
     }
 
+    shareScenario() {
+        const config = this.getCurrentConfig();
+        const url = this.generateShareableUrl(config);
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(url).then(() => {
+            this.showNotification('Shareable URL copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            this.showNotification('Shareable URL copied to clipboard!');
+        });
+    }
+
+    generateShareableUrl(config) {
+        // Encode the configuration as base64
+        const configString = JSON.stringify(config);
+        const encodedConfig = btoa(configString);
+        
+        // Create URL with encoded data
+        const baseUrl = window.location.origin + window.location.pathname;
+        return `${baseUrl}?scenario=${encodedConfig}`;
+    }
+
+    loadFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedScenario = urlParams.get('scenario');
+        
+        if (encodedScenario) {
+            try {
+                const configString = atob(encodedScenario);
+                const config = JSON.parse(configString);
+                
+                // Create a new scenario with the shared configuration
+                const scenarioName = `Shared Scenario - ${new Date().toLocaleDateString()}`;
+                const newScenario = this.scenarioManager.createScenario(scenarioName, config);
+                
+                // Load the scenario
+                this.loadScenario(newScenario.id);
+                this.updateScenarioList();
+                
+                // Clean up the URL
+                const newUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+                
+                this.showNotification('Shared scenario loaded successfully!');
+                
+                return true;
+            } catch (error) {
+                console.error('Error loading shared scenario:', error);
+                this.showNotification('Error loading shared scenario. Invalid URL.');
+                return false;
+            }
+        }
+        return false;
+    }
+
+    initializeUrlSharing() {
+        // Check if there's a shared scenario in the URL on page load
+        setTimeout(() => {
+            this.loadFromUrl();
+        }, 100); // Small delay to ensure everything is initialized
+    }
+
     createNewScenario() {
         const newName = prompt('Enter a name for the new scenario:', 'New Scenario');
         if (newName) {
@@ -727,6 +1229,9 @@ class MonteCarloRetirementSimulator {
                 this.clearResults();
             }
             
+            // Update recommendations for the loaded scenario
+            this.updateRecommendations();
+            
             this.updateCurrentScenarioDisplay();
             this.updateScenarioList();
         }
@@ -754,6 +1259,70 @@ class MonteCarloRetirementSimulator {
         }
     }
 
+    updateRecommendations() {
+        try {
+            if (!this.recommendationsEngine || !this.recommendationsSection || !this.recommendationsContainer) {
+                return;
+            }
+            
+            const inputValues = this.getInputValues();
+            const incomeEvents = this.getIncomeEvents();
+            const recommendations = this.recommendationsEngine.analyzeScenario(
+                this.simulationResults, 
+                inputValues, 
+                incomeEvents
+            );
+            
+            this.displayRecommendations(recommendations);
+        } catch (error) {
+            console.error('Error updating recommendations:', error);
+        }
+    }
+
+    displayRecommendations(recommendations) {
+        if (!this.recommendationsContainer || !this.recommendationsSection) return;
+        
+        // Show the recommendations section
+        this.recommendationsSection.style.display = 'block';
+        
+        // Clear existing recommendations
+        this.recommendationsContainer.innerHTML = '';
+        
+        if (recommendations.length === 0) {
+            this.recommendationsContainer.innerHTML = `
+                <div class="recommendation-card">
+                    <div class="recommendation-title">🎉 Excellent Plan!</div>
+                    <div class="recommendation-description">
+                        Your retirement plan appears well-optimized. Continue monitoring and adjusting as needed.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        // Display recommendations
+        recommendations.forEach(rec => {
+            const priorityDisplay = this.recommendationsEngine.getPriorityDisplay(rec.priority);
+            const categoryIcon = this.recommendationsEngine.getCategoryIcon(rec.category);
+            
+            const card = document.createElement('div');
+            card.className = `recommendation-card priority-${rec.priority}`;
+            card.innerHTML = `
+                <div class="recommendation-header">
+                    <div class="recommendation-title">${categoryIcon} ${rec.title}</div>
+                    <div class="recommendation-priority priority-${rec.priority}">
+                        ${priorityDisplay.text}
+                    </div>
+                </div>
+                <div class="recommendation-description">${rec.description}</div>
+                <div class="recommendation-action">${rec.action}</div>
+                <div class="recommendation-impact">${rec.impact}</div>
+            `;
+            
+            this.recommendationsContainer.appendChild(card);
+        });
+    }
+
     duplicateScenario(scenarioId) {
         const scenario = this.scenarioManager.getScenario(scenarioId);
         if (scenario) {
@@ -774,9 +1343,16 @@ class MonteCarloRetirementSimulator {
         scenarios.forEach(scenario => {
             const scenarioDiv = document.createElement('div');
             scenarioDiv.className = `scenario-item ${scenario.id === this.currentScenarioId ? 'active' : ''}`;
+            const successRateHtml = scenario.results ? 
+                `<div class="scenario-success-rate ${this.getSuccessRateClass(scenario.results.successRate)}">${Math.round(scenario.results.successRate)}%</div>` : 
+                '';
+            
             scenarioDiv.innerHTML = `
                 <div class="scenario-item-content">
-                    <div class="scenario-item-name">${scenario.name}</div>
+                    <div class="scenario-item-header">
+                        <div class="scenario-item-name">${scenario.name}</div>
+                        ${successRateHtml}
+                    </div>
                     <div class="scenario-item-details">
                         ${scenario.results ? 'Simulated' : 'Not simulated'} • 
                         ${new Date(scenario.updatedAt).toLocaleDateString()}
@@ -796,6 +1372,12 @@ class MonteCarloRetirementSimulator {
             
             this.scenarioListContainer.appendChild(scenarioDiv);
         });
+    }
+
+    getSuccessRateClass(successRate) {
+        if (successRate >= 85) return 'success';
+        if (successRate >= 70) return 'warning';
+        return 'danger';
     }
 
     updateCurrentScenarioDisplay() {
@@ -1025,20 +1607,30 @@ class MonteCarloRetirementSimulator {
         const allValues = results.allPaths.flat();
         const startingValue = results.allPaths[0][0];
         
+        // Calculate percentiles for better path selection first
+        const percentilePaths = this.selectPercentilePaths(results);
+        
         // Calculate percentiles for better scaling decisions
         const sortedValues = [...allValues].sort((a, b) => a - b);
         const p5 = sortedValues[Math.floor(0.05 * sortedValues.length)];
         const p95 = sortedValues[Math.floor(0.95 * sortedValues.length)];
         
-        // Use a range that captures 95% of outcomes with some padding
-        const chartMin = Math.max(0, p5 * 0.8);
-        const chartMax = Math.max(p95 * 1.2, startingValue * 1.3);
+        // Also include the actual percentile path values in scaling
+        const p90MaxValue = Math.max(...percentilePaths.p90);
+        const p10MinValue = Math.min(...percentilePaths.p10);
+        
+        // Use a range that captures all percentile paths with some padding
+        const chartMin = Math.max(0, Math.min(p5 * 0.8, p10MinValue * 0.9));
+        const chartMax = Math.max(p95 * 1.2, startingValue * 1.3, p90MaxValue * 1.1);
 
         // Draw grid and axes
         this.drawGrid(chartMax, maxYears, chartMin);
-
-        // Calculate percentiles for better path selection
-        const percentilePaths = this.selectPercentilePaths(results);
+        
+        // Set up clipping region to constrain all paths within chart boundaries
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(this.chartX, this.chartY, this.chartWidth, this.chartHeight);
+        this.ctx.clip();
         
         // Draw percentile range bands first (background)
         this.drawPercentileBands(percentilePaths, chartMax, maxYears, chartMin);
@@ -1062,6 +1654,9 @@ class MonteCarloRetirementSimulator {
         // Draw median path (most prominent)
         const medianPath = this.calculateMedianPath(results.allPaths);
         this.drawPath(medianPath, '#2c3e50', chartMax, maxYears, 4, chartMin);
+
+        // Restore clipping context before drawing zones and labels
+        this.ctx.restore();
 
         // Draw success/failure zones
         this.drawSuccessZones(chartMax, maxYears, chartMin);
@@ -1232,7 +1827,10 @@ class MonteCarloRetirementSimulator {
                 this.ctx.lineTo(this.chartX + this.chartWidth, y);
                 this.ctx.stroke();
 
-                this.ctx.fillText(this.formatCurrencyShort(value), 75, y + 4);
+                // Position labels to the left of the Y-axis with right alignment
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText(this.formatCurrencyShort(value), this.chartX - 5, y + 4);
+                this.ctx.textAlign = 'left'; // Reset to default alignment
             }
         }
 
@@ -1295,15 +1893,17 @@ class MonteCarloRetirementSimulator {
         this.ctx.fillStyle = '#495057';
         this.ctx.font = 'bold 14px sans-serif';
         
+        // Chart title
+        this.ctx.font = 'bold 18px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Portfolio Value over Time', this.chartX + this.chartWidth / 2, this.chartY - 20);
+        
+        // Reset font for other labels
+        this.ctx.font = 'bold 14px sans-serif';
+        this.ctx.textAlign = 'left';
+        
         // X-axis label
         this.ctx.fillText('Years in Retirement', this.chartX + this.chartWidth / 2 - 60, this.chartY + this.chartHeight + 40);
-        
-        // Y-axis label
-        this.ctx.save();
-        this.ctx.translate(15, this.chartY + this.chartHeight / 2);
-        this.ctx.rotate(-Math.PI / 2);
-        this.ctx.fillText('Portfolio Value', -50, 0);
-        this.ctx.restore();
     }
 
     clearResults() {
@@ -1331,6 +1931,9 @@ class MonteCarloRetirementSimulator {
         
         // Clear chart
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Clear simulation results for recommendations
+        this.simulationResults = null;
     }
 
     formatCurrency(amount) {

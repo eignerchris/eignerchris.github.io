@@ -21,9 +21,13 @@ class NetWorthSimulator {
 
         // Result elements
         this.netWorth10y = document.getElementById('net-worth-10y');
+        this.netWorth20y = document.getElementById('net-worth-20y');
+        this.netWorth30y = document.getElementById('net-worth-30y');
+        this.netWorth40y = document.getElementById('net-worth-40y');
         this.annualSavingsDisplay = document.getElementById('annual-savings-display');
         this.monthlySavingsDisplay = document.getElementById('monthly-savings');
         this.doublingTime = document.getElementById('doubling-time');
+        this.savingsRate = document.getElementById('savings-rate');
         this.projectionMessage = document.getElementById('projection-message');
 
         // Chart elements
@@ -160,12 +164,15 @@ class NetWorthSimulator {
         const values = this.getInputValues();
         const projection = this.calculateProjection(this.currentTimeframe);
         
-        // Calculate key metrics
+        // Calculate key metrics for different timeframes
         const netWorthIn10Years = this.calculateProjection(10)[10].nominalNetWorth;
+        const netWorthIn20Years = this.calculateProjection(20)[20].nominalNetWorth;
+        const netWorthIn30Years = this.calculateProjection(30)[30].nominalNetWorth;
+        const netWorthIn40Years = this.calculateProjection(40)[40].nominalNetWorth;
         const doublingYears = this.calculateDoublingTime(values);
 
         // Update statistics
-        this.updateStatistics(values, netWorthIn10Years, doublingYears);
+        this.updateStatistics(values, netWorthIn10Years, netWorthIn20Years, netWorthIn30Years, netWorthIn40Years, doublingYears);
 
         // Draw the chart
         this.drawChart(projection);
@@ -184,8 +191,12 @@ class NetWorthSimulator {
         return 0.72 / effectiveRate;
     }
 
-    updateStatistics(values, netWorthIn10Years, doublingYears) {
+    updateStatistics(values, netWorthIn10Years, netWorthIn20Years, netWorthIn30Years, netWorthIn40Years, doublingYears) {
+        // Update net worth projections
         this.netWorth10y.textContent = this.formatCurrency(netWorthIn10Years);
+        this.netWorth20y.textContent = this.formatCurrency(netWorthIn20Years);
+        this.netWorth30y.textContent = this.formatCurrency(netWorthIn30Years);
+        this.netWorth40y.textContent = this.formatCurrency(netWorthIn40Years);
         
         // Show actual savings (income - expenses) which can be negative
         const actualSavings = values.annualSavings;
@@ -199,6 +210,10 @@ class NetWorthSimulator {
             
         this.doublingTime.textContent = doublingYears === Infinity ? 
             'N/A' : Math.round(doublingYears * 10) / 10 + ' years';
+
+        // Calculate and display savings rate
+        const savingsRate = values.annualIncome > 0 ? (values.annualSavings / values.annualIncome) * 100 : 0;
+        this.savingsRate.textContent = savingsRate.toFixed(1) + '%';
     }
 
     drawChart(projection) {
@@ -247,8 +262,32 @@ class NetWorthSimulator {
             this.ctx.fillText(year.toString(), x - 10, this.chartY + this.chartHeight + 15);
         }
 
-        // Horizontal grid lines (net worth)
-        const worthStep = Math.pow(10, Math.floor(Math.log10(maxNetWorth / 5)));
+        // Horizontal grid lines (net worth) - improved spacing to prevent overlap
+        const targetGridLines = 6; // Aim for about 6 horizontal lines for readability
+        const rawStep = maxNetWorth / targetGridLines;
+        
+        // Round step to a nice number (powers of 10 with 1, 2, or 5 multipliers)
+        const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+        const normalizedStep = rawStep / magnitude;
+        let worthStep;
+        
+        if (normalizedStep <= 1) {
+            worthStep = magnitude;
+        } else if (normalizedStep <= 2) {
+            worthStep = 2 * magnitude;
+        } else if (normalizedStep <= 5) {
+            worthStep = 5 * magnitude;
+        } else {
+            worthStep = 10 * magnitude;
+        }
+        
+        // Ensure minimum spacing between labels (at least 30 pixels)
+        const minSpacing = 30;
+        const maxLabels = Math.floor(this.chartHeight / minSpacing);
+        if (maxNetWorth / worthStep > maxLabels) {
+            worthStep = Math.ceil(maxNetWorth / maxLabels / worthStep) * worthStep;
+        }
+        
         for (let worth = 0; worth <= maxNetWorth; worth += worthStep) {
             const y = this.chartY + this.chartHeight - (worth / maxNetWorth) * this.chartHeight;
             
@@ -257,9 +296,13 @@ class NetWorthSimulator {
             this.ctx.lineTo(this.chartX + this.chartWidth, y);
             this.ctx.stroke();
 
-            // Worth labels
-            this.ctx.fillText(this.formatCurrencyShort(worth), 5, y + 4);
+            // Worth labels - positioned to the left of the chart with proper alignment
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(this.formatCurrencyShort(worth), this.chartX - 5, y + 4);
         }
+        
+        // Reset text alignment for other elements
+        this.ctx.textAlign = 'left';
 
         // Draw axes
         this.ctx.strokeStyle = '#495057';
