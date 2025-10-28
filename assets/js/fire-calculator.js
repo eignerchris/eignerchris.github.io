@@ -27,6 +27,11 @@ class FIRECalculator {
         this.progressText = document.getElementById('progress-text');
         this.scenarioMessage = document.getElementById('scenario-message');
 
+        // Chart elements
+        this.canvas = document.getElementById('fire-chart');
+        this.ctx = this.canvas.getContext('2d');
+        this.setupChart();
+
         // Collect all inputs for easy iteration
         this.inputs = [
             this.currentAge,
@@ -37,6 +42,25 @@ class FIRECalculator {
             this.expectedReturn,
             this.withdrawalRate
         ];
+    }
+
+    setupChart() {
+        // Set up canvas with proper DPI handling
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+        
+        this.ctx.scale(dpr, dpr);
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
+
+        // Chart dimensions
+        this.chartWidth = rect.width - 80;
+        this.chartHeight = rect.height - 60;
+        this.chartX = 50;
+        this.chartY = 20;
     }
 
     addEventListeners() {
@@ -52,6 +76,14 @@ class FIRECalculator {
             input.addEventListener('change', () => {
                 this.calculate();
             });
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                this.setupChart();
+                this.calculate();
+            }, 100);
         });
     }
 
@@ -183,6 +215,9 @@ class FIRECalculator {
                 values.expectedReturn
             );
 
+            // Calculate wealth projection over time
+            const wealthProjection = this.calculateWealthProjection(values, Math.max(actualYearsToFire, yearsToRetirement) + 5);
+
             // Update the display
             this.updateDisplay({
                 fireNumber,
@@ -192,7 +227,8 @@ class FIRECalculator {
                 currentProgress,
                 willReachFire,
                 actualYearsToFire,
-                values
+                values,
+                wealthProjection
             });
 
         } catch (error) {
@@ -218,6 +254,26 @@ class FIRECalculator {
         return months / 12;
     }
 
+    calculateWealthProjection(values, totalYears) {
+        const projection = [];
+        const monthlyRate = values.expectedReturn / 12;
+        let currentWealth = values.currentSavings;
+        
+        // Add starting point
+        projection.push({ year: 0, wealth: currentWealth });
+        
+        // Project wealth growth year by year
+        for (let year = 1; year <= totalYears; year++) {
+            // Add 12 months of contributions and growth
+            for (let month = 0; month < 12; month++) {
+                currentWealth = currentWealth * (1 + monthlyRate) + values.monthlyContribution;
+            }
+            projection.push({ year, wealth: currentWealth });
+        }
+        
+        return projection;
+    }
+
     updateDisplay(results) {
         // Update main result
         this.animateValueChange(this.yearsToFire, 
@@ -238,6 +294,9 @@ class FIRECalculator {
 
         // Update scenario analysis
         this.updateScenarioAnalysis(results);
+
+        // Draw the chart
+        this.drawChart(results);
     }
 
     animateValueChange(element, newValue) {
@@ -306,6 +365,176 @@ class FIRECalculator {
         // Show error message
         this.scenarioMessage.textContent = '❌ ' + errors.join('. ');
         this.scenarioMessage.className = 'scenario-message error';
+    }
+
+    drawChart(results) {
+        // Clear canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (!results.wealthProjection || results.wealthProjection.length < 2) return;
+
+        const maxWealth = Math.max(...results.wealthProjection.map(p => p.wealth), results.fireNumber);
+        const maxYears = results.wealthProjection[results.wealthProjection.length - 1].year;
+
+        // Draw grid and axes
+        this.drawGrid(maxWealth, maxYears);
+
+        // Draw FIRE target line
+        this.drawFireTarget(results.fireNumber, maxWealth, maxYears);
+
+        // Draw wealth accumulation line
+        this.drawWealthLine(results.wealthProjection, maxWealth, maxYears);
+
+        // Highlight FIRE achievement point
+        this.highlightFirePoint(results);
+
+        // Add labels
+        this.addChartLabels();
+    }
+
+    drawGrid(maxWealth, maxYears) {
+        this.ctx.strokeStyle = '#e9ecef';
+        this.ctx.lineWidth = 1;
+        this.ctx.font = '11px sans-serif';
+        this.ctx.fillStyle = '#6c757d';
+
+        // Vertical grid lines (years)
+        const yearStep = Math.max(1, Math.ceil(maxYears / 8));
+        for (let year = 0; year <= maxYears; year += yearStep) {
+            const x = this.chartX + (year / maxYears) * this.chartWidth;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, this.chartY);
+            this.ctx.lineTo(x, this.chartY + this.chartHeight);
+            this.ctx.stroke();
+
+            // Year labels
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(year.toString(), x, this.chartY + this.chartHeight + 15);
+        }
+
+        // Horizontal grid lines (wealth)
+        const wealthStep = this.getNiceStep(maxWealth / 6);
+        for (let wealth = 0; wealth <= maxWealth; wealth += wealthStep) {
+            const y = this.chartY + this.chartHeight - (wealth / maxWealth) * this.chartHeight;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.chartX, y);
+            this.ctx.lineTo(this.chartX + this.chartWidth, y);
+            this.ctx.stroke();
+
+            // Wealth labels
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(this.formatCurrencyShort(wealth), this.chartX - 5, y + 3);
+        }
+
+        // Draw axes
+        this.ctx.strokeStyle = '#495057';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.chartX, this.chartY);
+        this.ctx.lineTo(this.chartX, this.chartY + this.chartHeight);
+        this.ctx.lineTo(this.chartX + this.chartWidth, this.chartY + this.chartHeight);
+        this.ctx.stroke();
+    }
+
+    drawFireTarget(fireNumber, maxWealth, maxYears) {
+        const y = this.chartY + this.chartHeight - (fireNumber / maxWealth) * this.chartHeight;
+        
+        this.ctx.strokeStyle = '#e74c3c';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([8, 4]);
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.chartX, y);
+        this.ctx.lineTo(this.chartX + this.chartWidth, y);
+        this.ctx.stroke();
+        
+        this.ctx.setLineDash([]);
+        
+        // FIRE target label
+        this.ctx.fillStyle = '#e74c3c';
+        this.ctx.font = 'bold 11px sans-serif';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText('FIRE Target: ' + this.formatCurrencyShort(fireNumber), this.chartX + 10, y - 5);
+    }
+
+    drawWealthLine(projection, maxWealth, maxYears) {
+        this.ctx.strokeStyle = '#667eea';
+        this.ctx.lineWidth = 3;
+        
+        this.ctx.beginPath();
+        projection.forEach((point, index) => {
+            const x = this.chartX + (point.year / maxYears) * this.chartWidth;
+            const y = this.chartY + this.chartHeight - (point.wealth / maxWealth) * this.chartHeight;
+            
+            if (index === 0) {
+                this.ctx.moveTo(x, y);
+            } else {
+                this.ctx.lineTo(x, y);
+            }
+        });
+        this.ctx.stroke();
+    }
+
+    highlightFirePoint(results) {
+        if (results.actualYearsToFire === Infinity || results.actualYearsToFire > 50) return;
+        
+        const fireYear = results.actualYearsToFire;
+        const maxWealth = Math.max(...results.wealthProjection.map(p => p.wealth), results.fireNumber);
+        const maxYears = results.wealthProjection[results.wealthProjection.length - 1].year;
+        
+        const x = this.chartX + (fireYear / maxYears) * this.chartWidth;
+        const y = this.chartY + this.chartHeight - (results.fireNumber / maxWealth) * this.chartHeight;
+        
+        // Draw FIRE achievement circle
+        this.ctx.fillStyle = '#28a745';
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        this.ctx.fill();
+        
+        // Add FIRE achievement label
+        this.ctx.fillStyle = '#28a745';
+        this.ctx.font = 'bold 11px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('FIRE!', x, y - 10);
+    }
+
+    addChartLabels() {
+        this.ctx.fillStyle = '#495057';
+        this.ctx.font = 'bold 12px sans-serif';
+        
+        // X-axis label
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Years', this.chartX + this.chartWidth / 2, this.chartY + this.chartHeight + 35);
+        
+        // Y-axis label
+        this.ctx.save();
+        this.ctx.translate(15, this.chartY + this.chartHeight / 2);
+        this.ctx.rotate(-Math.PI / 2);
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Portfolio Value', 0, 0);
+        this.ctx.restore();
+    }
+
+    getNiceStep(rawStep) {
+        const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+        const normalizedStep = rawStep / magnitude;
+        
+        if (normalizedStep <= 1) return magnitude;
+        if (normalizedStep <= 2) return 2 * magnitude;
+        if (normalizedStep <= 5) return 5 * magnitude;
+        return 10 * magnitude;
+    }
+
+    formatCurrencyShort(amount) {
+        if (amount >= 1000000) {
+            return '$' + (amount / 1000000).toFixed(1) + 'M';
+        } else if (amount >= 1000) {
+            return '$' + Math.round(amount / 1000) + 'K';
+        } else {
+            return '$' + Math.round(amount);
+        }
     }
 }
 

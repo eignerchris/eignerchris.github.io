@@ -516,8 +516,80 @@ input:focus-visible {
     opacity: 1;
 }
 
+/* FIRE Calculator Legend Colors */
+.legend-color.wealth-accumulation {
+    background: #667eea;
+}
+
+.legend-color.fire-achievement {
+    background: #28a745;
+}
+
+.legend-dotted.fire-target {
+    color: #e74c3c;
+}
+
+/* Enhanced Tooltip System for FIRE Calculator */
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 6px;
+}
+
+.tooltip-icon {
+    background: #666;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    text-align: center;
+    font-size: 12px;
+    line-height: 16px;
+    cursor: help;
+    font-weight: bold;
+}
+
+.tooltip-icon:hover {
+    background: #444;
+}
+
+.tooltip-content {
+    visibility: hidden;
+    position: fixed;
+    width: 300px;
+    max-width: 90vw;
+    background-color: #333;
+    color: white;
+    text-align: left;
+    border-radius: 8px;
+    padding: 12px;
+    z-index: 999999;
+    top: auto;
+    left: auto;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: normal;
+    white-space: normal;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    pointer-events: none;
+    word-wrap: break-word;
+}
+
+.tooltip-container:hover .tooltip-content {
+    visibility: visible;
+    opacity: 1;
+}
+
 /* Responsive tooltip positioning */
 @media (max-width: 768px) {
+    .tooltip-content {
+        width: 240px !important;
+        font-size: 12px !important;
+    }
+    
     .tooltip .tooltip-text {
         width: 250px;
         margin-left: -125px;
@@ -571,7 +643,7 @@ input:focus-visible {
 
 .input-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     margin-bottom: 1rem;
     align-items: start;
