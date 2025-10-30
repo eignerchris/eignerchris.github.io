@@ -531,6 +531,7 @@ class MonteCarloRetirementSimulator {
         this.addEventListeners();
         this.setupIframeDetection();
         this.incomeEvents = [];
+        this.expenseEvents = [];
         this.simulationResults = null;
         
         // Initialize scenario management
@@ -567,6 +568,8 @@ class MonteCarloRetirementSimulator {
         this.simulationStatus = document.getElementById('simulation-status');
         this.addIncomeEventBtn = document.getElementById('add-income-event');
         this.incomeEventsContainer = document.getElementById('income-events-container');
+        this.addExpenseEventBtn = document.getElementById('add-expense-event');
+        this.expenseEventsContainer = document.getElementById('expense-events-container');
 
         // Result elements
         this.successRate = document.getElementById('success-rate');
@@ -645,6 +648,11 @@ class MonteCarloRetirementSimulator {
         // Add income event button
         this.addIncomeEventBtn.addEventListener('click', () => {
             this.addIncomeEvent();
+        });
+
+        // Add expense event button
+        this.addExpenseEventBtn.addEventListener('click', () => {
+            this.addExpenseEvent();
         });
 
         // Input change listeners for real-time updates
@@ -782,6 +790,73 @@ class MonteCarloRetirementSimulator {
         this.incomeEventsContainer.appendChild(eventDiv);
     }
 
+    addExpenseEvent() {
+        const eventId = Date.now();
+        const eventDiv = document.createElement('div');
+        eventDiv.className = 'expense-event';
+        eventDiv.innerHTML = `
+            <div class="expense-event-field">
+                <label>Event Name</label>
+                <input type="text" placeholder="e.g., Home renovation, Medical bills" class="event-name">
+            </div>
+            <div class="expense-event-field">
+                <label>Type</label>
+                <select class="event-type">
+                    <option value="one-time">One-time</option>
+                    <option value="recurring">Recurring</option>
+                </select>
+            </div>
+            <div class="expense-event-field">
+                <label>Annual Amount</label>
+                <input type="number" placeholder="15000" class="event-amount" step="1000">
+            </div>
+            <div class="expense-event-field">
+                <label>Start Year</label>
+                <input type="number" placeholder="1" class="event-start-year" min="1" max="50" value="1">
+            </div>
+            <div class="expense-event-field">
+                <label>End Year</label>
+                <input type="number" placeholder="1" class="event-end-year" min="1" max="50" value="1">
+            </div>
+            <div class="expense-event-field">
+                <label>Inflation Adj.</label>
+                <select class="event-inflation">
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div class="expense-event-field">
+                <label>&nbsp;</label>
+                <button class="remove-event-btn" onclick="this.parentElement.parentElement.remove()" title="Remove this expense event">×</button>
+            </div>
+        `;
+        
+        // Add event listeners to handle type changes
+        const typeSelect = eventDiv.querySelector('.event-type');
+        const endYearField = eventDiv.querySelector('.event-end-year');
+        
+        typeSelect.addEventListener('change', function() {
+            if (this.value === 'one-time') {
+                endYearField.value = eventDiv.querySelector('.event-start-year').value;
+                endYearField.disabled = true;
+            } else {
+                endYearField.disabled = false;
+            }
+        });
+        
+        // Sync start year to end year for one-time events
+        eventDiv.querySelector('.event-start-year').addEventListener('input', function() {
+            if (typeSelect.value === 'one-time') {
+                endYearField.value = this.value;
+            }
+        });
+        
+        // Initialize as one-time event
+        endYearField.disabled = true;
+        
+        this.expenseEventsContainer.appendChild(eventDiv);
+    }
+
     getInputValues() {
         return {
             portfolioValue: parseFloat(this.portfolioValue.value) || 1000000,
@@ -821,6 +896,33 @@ class MonteCarloRetirementSimulator {
         return events;
     }
 
+    getExpenseEvents() {
+        const events = [];
+        const eventElements = this.expenseEventsContainer.querySelectorAll('.expense-event');
+        
+        eventElements.forEach(element => {
+            const name = element.querySelector('.event-name').value;
+            const amount = parseFloat(element.querySelector('.event-amount').value);
+            const type = element.querySelector('.event-type').value;
+            const startYear = parseInt(element.querySelector('.event-start-year').value);
+            const endYear = parseInt(element.querySelector('.event-end-year').value);
+            const inflationAdjusted = element.querySelector('.event-inflation').value === 'true';
+            
+            if (name && amount && startYear) {
+                events.push({ 
+                    name, 
+                    amount, 
+                    type, 
+                    startYear, 
+                    endYear: endYear || startYear, 
+                    inflationAdjusted 
+                });
+            }
+        });
+        
+        return events;
+    }
+
     // Box-Muller transformation for normal distribution
     generateNormalRandom(mean, stdDev) {
         let u1 = Math.random();
@@ -834,7 +936,7 @@ class MonteCarloRetirementSimulator {
                Math.min(this.marketParams.maxReturn, result));
     }
 
-    runSingleSimulation(values, incomeEvents) {
+    runSingleSimulation(values, incomeEvents, expenseEvents) {
         const portfolioPath = [];
         let portfolio = values.portfolioValue;
         let currentExpenses = values.annualExpenses;
@@ -876,8 +978,26 @@ class MonteCarloRetirementSimulator {
 
             totalIncome += yearlyIncome;
 
+            // Add custom expense events to current expenses
+            let additionalExpenses = 0;
+            expenseEvents.forEach(event => {
+                // Check if this event applies to this year
+                if (year >= event.startYear && year <= event.endYear) {
+                    let eventAmount = event.amount;
+                    
+                    // Apply inflation adjustment if specified
+                    if (event.inflationAdjusted) {
+                        eventAmount *= Math.pow(1 + values.inflationRate, year - 1);
+                    }
+                    
+                    additionalExpenses += eventAmount;
+                }
+            });
+
+            const totalExpenses = currentExpenses + additionalExpenses;
+
             // Calculate net withdrawal needed
-            const netWithdrawal = Math.max(0, currentExpenses - yearlyIncome);
+            const netWithdrawal = Math.max(0, totalExpenses - yearlyIncome);
             totalWithdrawn += netWithdrawal;
 
             // Withdraw from portfolio
@@ -906,6 +1026,7 @@ class MonteCarloRetirementSimulator {
     async runMonteCarloSimulation() {
         const values = this.getInputValues();
         const incomeEvents = this.getIncomeEvents();
+        const expenseEvents = this.getExpenseEvents();
 
         // Update market parameters with user input
         this.marketParams.meanReturn = values.marketReturn;
@@ -936,7 +1057,7 @@ class MonteCarloRetirementSimulator {
 
             // Run batch of simulations
             for (let i = batchStart; i < batchEnd; i++) {
-                const simulation = this.runSingleSimulation(values, incomeEvents);
+                const simulation = this.runSingleSimulation(values, incomeEvents, expenseEvents);
                 results.simulations.push(simulation);
                 results.allPaths.push(simulation.portfolioPath);
                 results.finalValues.push(simulation.finalValue);
@@ -1064,6 +1185,7 @@ class MonteCarloRetirementSimulator {
     getCurrentConfig() {
         const values = this.getInputValues();
         const incomeEvents = this.getIncomeEvents();
+        const expenseEvents = this.getExpenseEvents();
         
         return {
             portfolioValue: values.portfolioValue,
@@ -1073,7 +1195,8 @@ class MonteCarloRetirementSimulator {
             marketReturn: values.marketReturn * 100,
             inflationRate: values.inflationRate * 100,
             numSimulations: values.numSimulations,
-            incomeEvents: incomeEvents
+            incomeEvents: incomeEvents,
+            expenseEvents: expenseEvents
         };
     }
 
@@ -1094,6 +1217,30 @@ class MonteCarloRetirementSimulator {
             config.incomeEvents.forEach(event => {
                 this.addIncomeEvent();
                 const eventDiv = this.incomeEventsContainer.lastElementChild;
+                eventDiv.querySelector('.event-name').value = event.name;
+                eventDiv.querySelector('.event-type').value = event.type;
+                eventDiv.querySelector('.event-amount').value = event.amount;
+                eventDiv.querySelector('.event-start-year').value = event.startYear;
+                eventDiv.querySelector('.event-end-year').value = event.endYear;
+                eventDiv.querySelector('.event-inflation').value = event.inflationAdjusted ? 'true' : 'false';
+                
+                // Trigger type change to update UI
+                const typeSelect = eventDiv.querySelector('.event-type');
+                const endYearField = eventDiv.querySelector('.event-end-year');
+                if (typeSelect.value === 'one-time') {
+                    endYearField.disabled = true;
+                }
+            });
+        }
+        
+        // Clear existing expense events
+        this.expenseEventsContainer.innerHTML = '';
+        
+        // Load expense events
+        if (config.expenseEvents && config.expenseEvents.length > 0) {
+            config.expenseEvents.forEach(event => {
+                this.addExpenseEvent();
+                const eventDiv = this.expenseEventsContainer.lastElementChild;
                 eventDiv.querySelector('.event-name').value = event.name;
                 eventDiv.querySelector('.event-type').value = event.type;
                 eventDiv.querySelector('.event-amount').value = event.amount;

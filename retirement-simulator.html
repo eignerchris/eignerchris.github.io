@@ -174,11 +174,13 @@
             font-style: italic;
         }
 
-        .income-events {
+        .income-events,
+        .expense-events {
             margin: 0;
         }
 
-        .income-event {
+        .income-event,
+        .expense-event {
             display: grid;
             grid-template-columns: 2fr 1fr 0.8fr 0.8fr 0.8fr 1fr 50px;
             gap: 0.75rem;
@@ -191,16 +193,23 @@
             overflow: hidden;
         }
 
+        .expense-event {
+            border-left: 4px solid #dc3545;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        }
+
         /* Adjust grid when sidebar is expanded and space is constrained */
         @media (max-width: 1400px) {
-            .income-event {
+            .income-event,
+            .expense-event {
                 grid-template-columns: 1.8fr 0.9fr 0.7fr 0.7fr 0.7fr 0.9fr 48px;
                 gap: 0.5rem;
             }
         }
 
         @media (max-width: 1200px) {
-            .income-event {
+            .income-event,
+            .expense-event {
                 grid-template-columns: 1.5fr 0.8fr 0.6fr 0.6fr 0.6fr 0.8fr 45px;
                 gap: 0.5rem;
             }
@@ -213,12 +222,14 @@
             }
         }
 
-        .income-event-field {
+        .income-event-field,
+        .expense-event-field {
             display: flex;
             flex-direction: column;
         }
 
-        .income-event-field label {
+        .income-event-field label,
+        .expense-event-field label {
             font-size: 0.8rem;
             font-weight: 500;
             color: #495057;
@@ -227,12 +238,15 @@
         }
 
         /* Ensure remove button aligns with input fields */
-        .income-event-field:last-child {
+        .income-event-field:last-child,
+        .expense-event-field:last-child {
             justify-content: flex-end;
         }
 
         .income-event-field input,
-        .income-event-field select {
+        .income-event-field select,
+        .expense-event-field input,
+        .expense-event-field select {
             padding: 0.75rem;
             border: 2px solid #e9ecef;
             border-radius: 6px;
@@ -243,13 +257,16 @@
         }
 
         .income-event-field input:focus,
-        .income-event-field select:focus {
+        .income-event-field select:focus,
+        .expense-event-field input:focus,
+        .expense-event-field select:focus {
             border-color: #667eea;
             outline: none;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .income-event-field select {
+        .income-event-field select,
+        .expense-event-field select {
             background: white;
             cursor: pointer;
         }
@@ -837,14 +854,17 @@
                 justify-content: center;
             }
             
-            .income-event {
+            .income-event,
+            .expense-event {
                 grid-template-columns: 1fr;
                 gap: 0.75rem;
                 padding: 1rem;
             }
 
             .income-event-field input,
-            .income-event-field select {
+            .income-event-field select,
+            .expense-event-field input,
+            .expense-event-field select {
                 font-size: 1rem;
             }
 
@@ -1181,6 +1201,19 @@
                     </div>
                 </div>
 
+                <!-- Major Expenses Group -->
+                <div class="input-section-group">
+                    <h3>💳 Major Expenses</h3>
+                    <p class="section-description">Add significant expenses beyond your regular annual expenses, such as home repairs, medical bills, travel, or helping family members. <strong>Enter amounts as annual values</strong> (per year).</p>
+
+                    <div class="expense-events">
+                        <div id="expense-events-container">
+                            <!-- Dynamic expense events will be added here -->
+                        </div>
+                        <button class="add-event-btn" id="add-expense-event" title="Add major expenses like home improvements, medical costs, travel, or family assistance">+ Add Expense Event</button>
+                    </div>
+                </div>
+
                 <!-- Market Assumptions Group -->
                 <div class="input-section-group">
                     <h3>📊 Market Assumptions</h3>
@@ -1381,6 +1414,7 @@
                 const buttonTooltips = {
                     'run-simulation': 'Run thousands of Monte Carlo simulations to test your retirement plan under various market conditions',
                     'add-income-event': 'Add additional income streams like pensions, social security, part-time work, or rental income',
+                    'add-expense-event': 'Add major expenses like home improvements, medical costs, travel, or family assistance',
                     'new-scenario': 'Create a new scenario to test different retirement planning assumptions and compare outcomes',
                     'save-scenario': 'Save the current settings as a named scenario for easy comparison and future reference',
                     'share-scenario': 'Generate a shareable URL for this scenario that you can send to others for collaboration or review'
@@ -1493,8 +1527,8 @@
                     }
                 });
 
-                // Function to add tooltips to income events
-                function addIncomeEventTooltips() {
+                // Function to add tooltips to income and expense events
+                function addEventTooltips() {
                     const incomeTooltips = {
                         'Event Name': 'A descriptive name for this income source (e.g., "Social Security", "Pension", "Part-time work", "Rental income")',
                         'Type': 'One-time: A single payment in one year. Recurring: Annual payments that continue for multiple years.',
@@ -1504,9 +1538,21 @@
                         'Inflation Adj.': 'Whether this income increases with inflation over time. Social Security typically adjusts for inflation, while some pensions do not.'
                     };
 
-                    document.querySelectorAll('.income-event-field label').forEach(label => {
+                    const expenseTooltips = {
+                        'Event Name': 'A descriptive name for this expense (e.g., "Home renovation", "Medical bills", "Travel fund", "Family assistance")',
+                        'Type': 'One-time: A single expense in one year. Recurring: Annual expenses that continue for multiple years.',
+                        'Amount': 'The annual dollar amount you expect to spend on this expense in today\'s purchasing power.',
+                        'Start Year': 'Which year of retirement this expense begins (Year 1 = first year of retirement).',
+                        'End Year': 'Which year of retirement this expense ends. For recurring expenses, this is the last year of the expense.',
+                        'Inflation Adj.': 'Whether this expense increases with inflation over time. Healthcare costs typically outpace inflation, while fixed payments do not.'
+                    };
+
+                    document.querySelectorAll('.income-event-field label, .expense-event-field label').forEach(label => {
                         const labelText = label.textContent.trim();
-                        if (incomeTooltips[labelText] && !label.querySelector('.tooltip-icon')) {
+                        const isExpense = label.closest('.expense-event');
+                        const tooltips = isExpense ? expenseTooltips : incomeTooltips;
+                        
+                        if (tooltips[labelText] && !label.querySelector('.tooltip-icon')) {
                             // Create tooltip container
                             const tooltipContainer = document.createElement('span');
                             tooltipContainer.className = 'tooltip';
@@ -1524,7 +1570,7 @@
                             // Create tooltip text
                             const tooltipText = document.createElement('span');
                             tooltipText.className = 'tooltip-text';
-                            tooltipText.textContent = incomeTooltips[labelText];
+                            tooltipText.textContent = tooltips[labelText];
                             
                             // Assemble tooltip
                             tooltipContainer.appendChild(icon);
@@ -1536,16 +1582,17 @@
                     });
                 }
 
-                // Add income event tooltips initially and when new events are added
-                addIncomeEventTooltips();
+                // Add event tooltips initially and when new events are added
+                addEventTooltips();
                 
-                // Monitor for new income events
+                // Monitor for new income and expense events
                 const observer = new MutationObserver(function(mutations) {
                     mutations.forEach(function(mutation) {
                         if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
                             mutation.addedNodes.forEach(function(node) {
-                                if (node.nodeType === 1 && node.classList && node.classList.contains('income-event')) {
-                                    setTimeout(addIncomeEventTooltips, 100);
+                                if (node.nodeType === 1 && node.classList && 
+                                    (node.classList.contains('income-event') || node.classList.contains('expense-event'))) {
+                                    setTimeout(addEventTooltips, 100);
                                 }
                             });
                         }
@@ -1553,6 +1600,11 @@
                 });
                 
                 observer.observe(document.getElementById('income-events-container') || document.body, {
+                    childList: true,
+                    subtree: true
+                });
+                
+                observer.observe(document.getElementById('expense-events-container') || document.body, {
                     childList: true,
                     subtree: true
                 });
