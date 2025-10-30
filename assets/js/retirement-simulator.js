@@ -588,6 +588,11 @@ class MonteCarloRetirementSimulator {
         this.statInflationImpact = document.getElementById('stat-inflation-impact');
         this.statYearsSustained = document.getElementById('stat-years-sustained');
 
+        // Growth table elements
+        this.growthTableSection = document.getElementById('growth-table-section');
+        this.growthTableBody = document.getElementById('growth-table-body');
+        this.exportCsvBtn = document.getElementById('export-csv-btn');
+
         // Chart elements
         this.canvas = document.getElementById('monteCarloChart');
         this.ctx = this.canvas.getContext('2d');
@@ -704,6 +709,11 @@ class MonteCarloRetirementSimulator {
                 e.preventDefault();
                 this.scenarioTitle.blur();
             }
+        });
+
+        // Export CSV button listener
+        this.exportCsvBtn.addEventListener('click', () => {
+            this.exportToCSV();
         });
 
         // Handle window resize
@@ -1127,6 +1137,9 @@ class MonteCarloRetirementSimulator {
 
         // Update statistics table
         this.updateStatistics(results, values);
+        
+        // Update growth table
+        this.updateGrowthTable(results, values);
         
         // Ensure tooltips are added to all results elements
         setTimeout(() => this.addResultsTooltips(), 100);
@@ -2076,11 +2089,186 @@ class MonteCarloRetirementSimulator {
             elem.className = 'stat-value';
         });
         
+        // Hide and clear growth table section
+        this.growthTableSection.style.display = 'none';
+        this.growthTableBody.innerHTML = '';
+        
         // Clear chart
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Clear simulation results for recommendations
         this.simulationResults = null;
+    }
+
+    generateDetailedProjection(values, incomeEvents, expenseEvents) {
+        // Generate a detailed year-by-year projection using median scenario assumptions
+        const projectionData = [];
+        let portfolio = values.portfolioValue;
+        let currentExpenses = values.annualExpenses;
+        
+        // Use median market return assumption for the projection
+        const medianReturn = values.marketReturn;
+        
+        for (let year = 1; year <= values.retirementYears; year++) {
+            const yearStartPortfolio = portfolio;
+            
+            // Apply market return
+            const marketReturn = medianReturn; // Using expected return for median scenario
+            portfolio *= (1 + marketReturn);
+            const portfolioAfterGrowth = portfolio;
+            
+            // Adjust expenses for inflation
+            currentExpenses *= (1 + values.inflationRate);
+            
+            // Calculate income for this year
+            let yearlyIncome = 0;
+            incomeEvents.forEach(event => {
+                if (year >= event.startYear && year <= event.endYear) {
+                    let eventAmount = event.amount;
+                    if (event.inflationAdjusted) {
+                        eventAmount *= Math.pow(1 + values.inflationRate, year - 1);
+                    }
+                    yearlyIncome += eventAmount;
+                }
+            });
+            
+            // Calculate additional expenses for this year
+            let additionalExpenses = 0;
+            expenseEvents.forEach(event => {
+                if (year >= event.startYear && year <= event.endYear) {
+                    let eventAmount = event.amount;
+                    if (event.inflationAdjusted) {
+                        eventAmount *= Math.pow(1 + values.inflationRate, year - 1);
+                    }
+                    additionalExpenses += eventAmount;
+                }
+            });
+            
+            const totalExpenses = currentExpenses + additionalExpenses;
+            const netWithdrawal = Math.max(0, totalExpenses - yearlyIncome);
+            
+            // Withdraw from portfolio
+            portfolio -= netWithdrawal;
+            const portfolioEndValue = Math.max(0, portfolio);
+            
+            projectionData.push({
+                year: year,
+                portfolioStart: yearStartPortfolio,
+                marketReturn: marketReturn,
+                portfolioAfterGrowth: portfolioAfterGrowth,
+                income: yearlyIncome,
+                expenses: totalExpenses,
+                netWithdrawal: netWithdrawal,
+                portfolioEnd: portfolioEndValue
+            });
+            
+            // Stop if portfolio is depleted
+            if (portfolio <= 0) {
+                portfolio = 0;
+                break;
+            }
+        }
+        
+        return projectionData;
+    }
+
+    updateGrowthTable(results, values) {
+        // Generate detailed projection data
+        const incomeEvents = this.getIncomeEvents();
+        const expenseEvents = this.getExpenseEvents();
+        const projectionData = this.generateDetailedProjection(values, incomeEvents, expenseEvents);
+        
+        // Store projection data for CSV export
+        this.currentProjectionData = projectionData;
+        
+        // Clear existing table data
+        this.growthTableBody.innerHTML = '';
+        
+        // Populate table with projection data
+        projectionData.forEach(rowData => {
+            const row = document.createElement('tr');
+            
+            const marketReturnPercent = (rowData.marketReturn * 100).toFixed(1);
+            const marketReturnClass = rowData.marketReturn >= 0 ? 'percentage-positive' : 'percentage-negative';
+            
+            row.innerHTML = `
+                <td>${rowData.year}</td>
+                <td class="currency-neutral">${this.formatCurrency(rowData.portfolioStart)}</td>
+                <td class="${marketReturnClass}">${marketReturnPercent}%</td>
+                <td class="currency-neutral">${this.formatCurrency(rowData.portfolioAfterGrowth)}</td>
+                <td class="currency-positive">${this.formatCurrency(rowData.income)}</td>
+                <td class="currency-negative">${this.formatCurrency(rowData.expenses)}</td>
+                <td class="currency-negative">${this.formatCurrency(rowData.netWithdrawal)}</td>
+                <td class="currency-neutral">${this.formatCurrency(rowData.portfolioEnd)}</td>
+            `;
+            
+            this.growthTableBody.appendChild(row);
+        });
+        
+        // Show the growth table section
+        this.growthTableSection.style.display = 'block';
+    }
+
+    exportToCSV() {
+        if (!this.currentProjectionData || this.currentProjectionData.length === 0) {
+            alert('No data available to export. Please run a simulation first.');
+            return;
+        }
+        
+        // Create CSV content
+        const headers = [
+            'Year',
+            'Portfolio Start',
+            'Market Return (%)', 
+            'Portfolio After Growth',
+            'Income',
+            'Expenses',
+            'Net Withdrawal',
+            'Portfolio End'
+        ];
+        
+        let csvContent = headers.join(',') + '\n';
+        
+        this.currentProjectionData.forEach(row => {
+            const csvRow = [
+                row.year,
+                row.portfolioStart.toFixed(2),
+                (row.marketReturn * 100).toFixed(2),
+                row.portfolioAfterGrowth.toFixed(2),
+                row.income.toFixed(2),
+                row.expenses.toFixed(2),
+                row.netWithdrawal.toFixed(2),
+                row.portfolioEnd.toFixed(2)
+            ];
+            csvContent += csvRow.join(',') + '\n';
+        });
+        
+        // Add summary information at the bottom
+        csvContent += '\n';
+        csvContent += 'Summary Information\n';
+        csvContent += `Simulation Date,${new Date().toLocaleDateString()}\n`;
+        
+        if (this.simulationResults) {
+            csvContent += `Success Rate,${this.simulationResults.successRate.toFixed(1)}%\n`;
+            csvContent += `10th Percentile Final Value,${this.simulationResults.percentile10.toFixed(2)}\n`;
+            csvContent += `50th Percentile Final Value,${this.simulationResults.percentile50.toFixed(2)}\n`;
+            csvContent += `90th Percentile Final Value,${this.simulationResults.percentile90.toFixed(2)}\n`;
+        }
+        
+        // Create and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const scenarioName = this.scenarioTitle.textContent.trim().replace(/[^a-zA-Z0-9]/g, '_');
+            link.setAttribute('download', `retirement_projection_${scenarioName}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     }
 
     formatCurrency(amount) {

@@ -1110,6 +1110,181 @@
                 font-size: 0.9rem;
             }
         }
+
+        /* Growth Table Styles */
+        .growth-table-section {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .growth-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .growth-table-header h4 {
+            margin: 0;
+            color: #495057;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .export-csv-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+            white-space: nowrap;
+        }
+
+        .export-csv-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+
+        .export-csv-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+        }
+
+        .growth-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            background: white;
+        }
+
+        .growth-table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #495057;
+            font-weight: 600;
+            padding: 1rem 0.75rem;
+            text-align: right;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .growth-table th:first-child {
+            text-align: center;
+        }
+
+        .growth-table td {
+            padding: 0.75rem;
+            text-align: right;
+            border-bottom: 1px solid #f1f3f4;
+            font-weight: 500;
+        }
+
+        .growth-table td:first-child {
+            text-align: center;
+            font-weight: 600;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .growth-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .growth-table tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+
+        .growth-table tbody tr:nth-child(even):hover {
+            background-color: #f1f3f4;
+        }
+
+        /* Currency formatting */
+        .currency-positive {
+            color: #28a745;
+        }
+
+        .currency-negative {
+            color: #dc3545;
+        }
+
+        .currency-neutral {
+            color: #495057;
+        }
+
+        /* Percentage formatting */
+        .percentage-positive {
+            color: #28a745;
+        }
+
+        .percentage-negative {
+            color: #dc3545;
+        }
+
+        /* Responsive table */
+        @media (max-width: 768px) {
+            .growth-table-section {
+                padding: 1rem;
+                margin: 1rem 0;
+            }
+            
+            .growth-table-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .export-csv-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .growth-table {
+                font-size: 0.8rem;
+            }
+            
+            .growth-table th,
+            .growth-table td {
+                padding: 0.5rem 0.25rem;
+            }
+            
+            .growth-table th {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Very small screens - stack table or make it more compact */
+        @media (max-width: 480px) {
+            .table-container {
+                border: none;
+            }
+            
+            .growth-table {
+                font-size: 0.75rem;
+            }
+            
+            .growth-table th,
+            .growth-table td {
+                padding: 0.4rem 0.2rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1338,6 +1513,41 @@
                         <h4>Simulation Results</h4>
                         <div id="monte-carlo-analysis" class="scenario-message">
                             Run the simulation to see detailed analysis of your retirement plan's probability of success.
+                        </div>
+                    </div>
+
+                    <!-- Growth Over Time Table -->
+                    <div class="growth-table-section" id="growth-table-section" style="display: none;">
+                        <div class="growth-table-header">
+                            <h4>📈 Growth Over Time 
+                                <span class="tooltip" style="margin-left: 8px;">
+                                    <span class="tooltip-icon" style="font-size: 12px; width: 18px; height: 18px; line-height: 18px;">?</span>
+                                    <span class="tooltip-text">Detailed year-by-year breakdown of your portfolio performance in the median scenario, including portfolio values, income, expenses, and net withdrawals. This shows how your retirement plan evolves over time.</span>
+                                </span>
+                            </h4>
+                            <button class="export-csv-btn" id="export-csv-btn" title="Export this data to CSV format for use in Excel or other spreadsheet applications">
+                                📊 Export to Excel (CSV)
+                            </button>
+                        </div>
+                        
+                        <div class="table-container">
+                            <table class="growth-table" id="growth-table">
+                                <thead>
+                                    <tr>
+                                        <th>Year</th>
+                                        <th>Portfolio Start</th>
+                                        <th>Market Return</th>
+                                        <th>Portfolio After Growth</th>
+                                        <th>Income</th>
+                                        <th>Expenses</th>
+                                        <th>Net Withdrawal</th>
+                                        <th>Portfolio End</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="growth-table-body">
+                                    <!-- Table data will be populated here -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
