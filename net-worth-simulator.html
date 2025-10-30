@@ -99,6 +99,54 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        /* Compact inputs for single row layout */
+        .compact-single-row .compact-input-group {
+            min-width: 120px;
+        }
+
+        .compact-single-row .compact-input-group input {
+            font-size: 0.85rem;
+            padding: 0.6rem 2.8rem 0.6rem 0.6rem;
+        }
+
+        .compact-single-row .compact-input-group label {
+            font-size: 0.8rem;
+            line-height: 1.2;
+            margin-bottom: 0.4rem;
+        }
+
+        .compact-single-row .compact-input-group .unit {
+            font-size: 0.75rem;
+            right: 0.6rem;
+        }
+
+        /* Seven column layout for all inputs */
+        .input-row.seven-columns {
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 1400px) {
+            .input-row.seven-columns {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .input-row.seven-columns {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .input-row.seven-columns {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -116,54 +164,38 @@
 
         <div class="simulator-layout">
             <div class="simulator-inputs">
-                <!-- Current Financial Status Group -->
-                <div class="input-section-group">
-                    <h3>💼 Current Financial Status</h3>
+                <!-- All Financial Inputs -->
+                <div class="input-section-group compact-single-row">
+                    <h3>💼 Financial Parameters</h3>
                     
-                    <div class="input-row two-columns">
+                    <div class="input-row seven-columns">
                         <div class="compact-input-group">
-                            <label for="current-net-worth">Current Net Worth</label>
+                            <label for="current-net-worth">Net Worth</label>
                             <input type="number" id="current-net-worth" value="50000" step="1000">
                             <span class="unit">$</span>
                         </div>
                         <div class="compact-input-group">
-                            <label for="annual-income">Annual Income (Gross)</label>
+                            <label for="annual-income">Annual Income</label>
                             <input type="number" id="annual-income" value="75000" step="1000">
-                            <span class="unit">$/year</span>
+                            <span class="unit">$/yr</span>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Savings & Expenses Group -->
-                <div class="input-section-group">
-                    <h3>💰 Savings & Expenses</h3>
-                    
-                    <div class="input-row two-columns">
                         <div class="compact-input-group">
                             <label for="annual-expenses">Annual Expenses</label>
                             <input type="number" id="annual-expenses" value="50000" step="1000">
-                            <span class="unit">$/year</span>
+                            <span class="unit">$/yr</span>
                         </div>
                         <div class="compact-input-group">
-                            <label for="annual-savings">Annual Savings/Investment</label>
+                            <label for="annual-savings">Annual Savings</label>
                             <input type="number" id="annual-savings" value="25000" step="1000">
-                            <span class="unit">$/year</span>
+                            <span class="unit">$/yr</span>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Growth Assumptions Group -->
-                <div class="input-section-group">
-                    <h3>📈 Growth Assumptions</h3>
-                    
-                    <div class="input-row three-columns">
                         <div class="compact-input-group">
-                            <label for="investment-return">Expected Investment Return</label>
+                            <label for="investment-return">Investment Return</label>
                             <input type="number" id="investment-return" min="0" max="20" value="7" step="0.1">
                             <span class="unit">%</span>
                         </div>
                         <div class="compact-input-group">
-                            <label for="income-growth">Annual Income Growth</label>
+                            <label for="income-growth">Income Growth</label>
                             <input type="number" id="income-growth" min="0" max="10" value="3" step="0.1">
                             <span class="unit">%</span>
                         </div>
