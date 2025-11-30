@@ -1381,7 +1381,17 @@ class MonteCarloRetirementSimulator {
             // Load saved results if available
             if (scenario.results) {
                 this.simulationResults = scenario.results;
-                this.updateResults(scenario.results, scenario.config);
+                // Convert config percentages to decimals for calculations
+                const configAsValues = {
+                    portfolioValue: scenario.config.portfolioValue,
+                    annualExpenses: scenario.config.annualExpenses,
+                    retirementYears: scenario.config.retirementYears,
+                    withdrawalRate: scenario.config.withdrawalRate / 100,
+                    marketReturn: scenario.config.marketReturn / 100,
+                    inflationRate: scenario.config.inflationRate / 100,
+                    numSimulations: scenario.config.numSimulations
+                };
+                this.updateResults(scenario.results, configAsValues);
                 this.drawChart(scenario.results);
                 this.runSimulationBtn.disabled = false;
                 this.simulationStatus.textContent = 'Loaded saved simulation results';
