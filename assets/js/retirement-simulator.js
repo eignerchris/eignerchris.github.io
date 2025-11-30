@@ -1604,7 +1604,7 @@ class MonteCarloRetirementSimulator {
         // Tooltips for statistics
         const statTooltips = {
             'FINAL NET WORTH': 'How much money you\'d have left at the end of retirement in the median scenario. A positive number means your portfolio lasted with money remaining; zero or negative means you may have run out of money.',
-            'ANNUAL RETIREMENT INCOME': 'The average annual income you can safely withdraw from your portfolio during retirement, based on your withdrawal rate and portfolio value. This represents your spending power each year.',
+            'ANNUAL RETIREMENT INCOME': 'The initial annual income you can withdraw from your portfolio based on your starting portfolio value and withdrawal rate. This amount adjusts over time for inflation and represents what your portfolio provides in year one of retirement.',
             'TOTAL WITHDRAWN': 'Total amount withdrawn from your portfolio over the entire retirement period, including both living expenses and any additional withdrawals. This shows the cumulative impact of your retirement spending.',
             'PORTFOLIO GROWTH': 'How much your portfolio grew (or shrank) including all withdrawals and market performance. This accounts for investment returns minus your withdrawals and shows the net change in portfolio value.',
             'INFLATION IMPACT': 'The total additional cost of goods and services due to inflation over your retirement. This shows how much more expensive things become, reducing your purchasing power over time.',
@@ -1696,8 +1696,9 @@ class MonteCarloRetirementSimulator {
         const totalWithdrawn = medianSimulation.totalWithdrawn;
         const initialPortfolio = values.portfolioValue;
         
-        // Calculate annual withdrawal amount based on median outcome
-        const annualWithdrawalAmount = totalWithdrawn / values.retirementYears;
+        // Calculate annual withdrawal amount - use the planned withdrawal rate, not average withdrawals
+        // This represents the retirement income you're planning to generate from your portfolio
+        const annualWithdrawalAmount = initialPortfolio * values.withdrawalRate;
         
         // Calculate portfolio growth
         const portfolioGrowth = ((finalWorth + totalWithdrawn - initialPortfolio) / initialPortfolio) * 100;
@@ -1718,8 +1719,11 @@ class MonteCarloRetirementSimulator {
                                        finalWorth > initialPortfolio * 0.25 ? 'stat-value neutral' : 'stat-value negative';
 
         this.statWithdrawalRate.textContent = this.formatCurrencyForCards(annualWithdrawalAmount) + '/year';
-        this.statWithdrawalRate.className = annualWithdrawalAmount >= values.annualExpenses * 0.9 ? 'stat-value positive' : 
-                                           annualWithdrawalAmount >= values.annualExpenses * 0.75 ? 'stat-value neutral' : 'stat-value negative';
+        // Show positive if withdrawal amount covers expenses, neutral if close, negative if insufficient
+        const totalAnnualIncome = medianSimulation.totalIncome / values.retirementYears;
+        const totalAnnualNeeds = values.annualExpenses;
+        const canCoverExpenses = (annualWithdrawalAmount + totalAnnualIncome) >= totalAnnualNeeds;
+        this.statWithdrawalRate.className = canCoverExpenses ? 'stat-value positive' : 'stat-value negative';
 
         this.statTotalWithdrawn.textContent = this.formatCurrencyForCards(totalWithdrawn);
         this.statTotalWithdrawn.className = 'stat-value neutral';
