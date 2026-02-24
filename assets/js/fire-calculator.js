@@ -216,7 +216,9 @@ class FIRECalculator {
             );
 
             // Calculate wealth projection over time
-            const wealthProjection = this.calculateWealthProjection(values, Math.max(actualYearsToFire, yearsToRetirement) + 5);
+            // Cap projection years to prevent infinite loop when actualYearsToFire is Infinity
+            const projectionYears = (isFinite(actualYearsToFire) ? Math.max(actualYearsToFire, yearsToRetirement) : yearsToRetirement) + 5;
+            const wealthProjection = this.calculateWealthProjection(values, projectionYears);
 
             // Update the display
             this.updateDisplay({
