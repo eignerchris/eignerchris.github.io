@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retirement Monte Carlo Simulator</title>
+    <title>Bucket Timeline Visualizer</title>
     <link rel="stylesheet" href="assets/css/calculators.css">
     <style>
-        /* Additional styles for Monte Carlo simulator */
+        /* Additional styles for bucket timeline visualizer */
         .simulation-container {
             background: white;
             border: 2px solid #e9ecef;
@@ -20,6 +20,67 @@
             width: 100%;
             height: 450px;
             border-radius: 4px;
+            display: block;
+            max-width: 100%;
+        }
+
+        #spendTimelineChart {
+            width: 100%;
+            height: 320px;
+            border-radius: 4px;
+            display: block;
+            max-width: 100%;
+        }
+
+        .chart-tooltip {
+            position: absolute;
+            display: none;
+            min-width: 220px;
+            max-width: 320px;
+            background: rgba(33, 37, 41, 0.96);
+            color: white;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .chart-tooltip-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .chart-tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .chart-tooltip-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .chart-tooltip-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .chart-tooltip-value {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .chart-tooltip-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            flex-shrink: 0;
         }
         
         .simulation-controls {
@@ -174,15 +235,22 @@
             font-style: italic;
         }
 
+        .bucket-accounts,
         .income-events,
         .expense-events {
             margin: 0;
         }
 
+        .bucket-accounts {
+            overflow-x: auto;
+            padding-bottom: 0.25rem;
+        }
+
+        .account-bucket,
         .income-event,
         .expense-event {
             display: grid;
-            grid-template-columns: 2fr 1fr 0.8fr 0.8fr 0.8fr 1fr 50px;
+            grid-template-columns: 1.6fr 1fr 1fr 0.8fr 0.9fr 0.8fr;
             gap: 0.75rem;
             align-items: end;
             margin: 1rem 0;
@@ -191,6 +259,45 @@
             border: 2px solid #e9ecef;
             border-radius: 8px;
             overflow: hidden;
+            position: relative;
+        }
+
+        .income-event,
+        .expense-event {
+            grid-template-columns: 2fr 1fr 0.8fr 0.8fr 0.8fr;
+        }
+
+        .account-bucket {
+            border-left: 4px solid #667eea;
+            background: linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%);
+            min-width: 775px;
+            grid-template-columns:
+                minmax(145px, 1.05fr)
+                minmax(140px, 0.88fr)
+                minmax(140px, 0.7fr)
+                minmax(74px, 0.36fr)
+                minmax(74px, 0.36fr)
+                minmax(74px, 0.36fr);
+        }
+
+        .account-bucket.bucket-type-taxable {
+            border-left-color: #007bff;
+        }
+
+        .account-bucket.bucket-type-inheritance {
+            border-left-color: #6f42c1;
+        }
+
+        .account-bucket.bucket-type-traditional {
+            border-left-color: #fd7e14;
+        }
+
+        .account-bucket.bucket-type-roth {
+            border-left-color: #28a745;
+        }
+
+        .account-bucket.bucket-type-cash {
+            border-left-color: #20c997;
         }
 
         .expense-event {
@@ -200,34 +307,53 @@
 
         /* Adjust grid when sidebar is expanded and space is constrained */
         @media (max-width: 1400px) {
+            .account-bucket {
+                min-width: 725px;
+                grid-template-columns:
+                minmax(135px, 0.98fr)
+                minmax(125px, 0.8fr)
+                minmax(130px, 0.66fr)
+                minmax(72px, 0.36fr)
+                minmax(72px, 0.36fr)
+                minmax(72px, 0.36fr);
+                gap: 0.5rem;
+            }
+
             .income-event,
             .expense-event {
-                grid-template-columns: 1.8fr 0.9fr 0.7fr 0.7fr 0.7fr 0.9fr 48px;
+                grid-template-columns: 1.8fr 0.9fr 0.7fr 0.7fr 0.7fr;
                 gap: 0.5rem;
             }
         }
 
         @media (max-width: 1200px) {
-            .income-event,
-            .expense-event {
-                grid-template-columns: 1.5fr 0.8fr 0.6fr 0.6fr 0.6fr 0.8fr 45px;
+            .account-bucket {
+                min-width: 665px;
+                grid-template-columns:
+                minmax(125px, 0.9fr)
+                minmax(115px, 0.72fr)
+                minmax(120px, 0.62fr)
+                minmax(68px, 0.34fr)
+                minmax(68px, 0.34fr)
+                minmax(68px, 0.34fr);
                 gap: 0.5rem;
             }
-            
-            .remove-event-btn {
-                font-size: 1rem;
-                padding: 0.4rem;
-                height: 40px;
-                width: 40px;
+
+            .income-event,
+            .expense-event {
+                grid-template-columns: 1.5fr 0.8fr 0.6fr 0.6fr 0.6fr;
+                gap: 0.5rem;
             }
         }
 
+        .account-bucket-field,
         .income-event-field,
         .expense-event-field {
             display: flex;
             flex-direction: column;
         }
 
+        .account-bucket-field label,
         .income-event-field label,
         .expense-event-field label {
             font-size: 0.8rem;
@@ -237,12 +363,8 @@
             min-height: 1.2rem; /* Ensure consistent label height */
         }
 
-        /* Ensure remove button aligns with input fields */
-        .income-event-field:last-child,
-        .expense-event-field:last-child {
-            justify-content: flex-end;
-        }
-
+        .account-bucket-field input,
+        .account-bucket-field select,
         .income-event-field input,
         .income-event-field select,
         .expense-event-field input,
@@ -256,6 +378,8 @@
             transition: border-color 0.3s ease;
         }
 
+        .account-bucket-field input:focus,
+        .account-bucket-field select:focus,
         .income-event-field input:focus,
         .income-event-field select:focus,
         .expense-event-field input:focus,
@@ -265,6 +389,7 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
+        .account-bucket-field select,
         .income-event-field select,
         .expense-event-field select {
             background: white;
@@ -350,24 +475,35 @@
             background: #dc3545;
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 0.5rem;
+            border-radius: 999px;
+            padding: 0;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
-            height: 48px;
-            width: 48px;
+            height: 26px;
+            width: 26px;
             transition: all 0.3s ease;
-            margin-top: auto; /* Align with input fields */
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            line-height: 1;
+            position: absolute;
+            top: 0.45rem;
+            right: 0.45rem;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.28);
+            z-index: 2;
         }
 
         .remove-event-btn:hover {
             background: #c82333;
-            transform: translateY(-1px);
+            transform: scale(1.06);
+            box-shadow: 0 6px 16px rgba(200, 35, 51, 0.34);
+        }
+
+        .remove-event-btn:focus-visible {
+            outline: 3px solid rgba(220, 53, 69, 0.18);
+            outline-offset: 2px;
         }
         
         .add-event-btn {
@@ -387,6 +523,11 @@
         .add-event-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+
+        .currency-warning {
+            color: #fd7e14;
+            font-weight: 600;
         }
         
         .simulation-legend {
@@ -686,6 +827,8 @@
             flex: 1;
             padding: 1rem;
             overflow-y: auto;
+            overflow-x: hidden;
+            min-width: 0;
         }
 
         /* Scenario Header Styles */
@@ -832,6 +975,25 @@
         }
 
         @media (max-width: 768px) {
+            .simulation-container,
+            .bucket-chart-container {
+                padding: 0.75rem;
+                overflow: hidden;
+            }
+
+            .full-width-chart canvas {
+                height: 360px !important;
+            }
+
+            #spendTimelineChart {
+                height: 240px;
+            }
+
+            .chart-tooltip {
+                min-width: 0;
+                max-width: calc(100% - 16px);
+            }
+
             .simulation-controls {
                 flex-direction: column;
                 align-items: center;
@@ -861,15 +1023,31 @@
                 padding: 1rem;
             }
 
+            .bucket-accounts {
+                overflow-x: visible;
+            }
+
+            .account-bucket {
+                min-width: 0;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.75rem;
+                padding: 1rem;
+            }
+
             .income-event-field input,
             .income-event-field select,
             .expense-event-field input,
-            .expense-event-field select {
+            .expense-event-field select,
+            .account-bucket-field input,
+            .account-bucket-field select {
                 font-size: 1rem;
             }
 
             .remove-event-btn {
-                padding: 0.75rem;
+                top: 0.4rem;
+                right: 0.4rem;
+                height: 24px;
+                width: 24px;
                 font-size: 0.9rem;
             }
             
@@ -945,6 +1123,12 @@
             .scenario-title {
                 font-size: 1.5rem;
                 text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .account-bucket {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1290,15 +1474,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>Retirement Monte Carlo Simulator</h1>
-            <p>Run thousands of scenarios to test your retirement plan's probability of success</p>
+            <h1>Bucket Timeline Visualizer</h1>
+            <p>Model account drawdown over time with a deterministic timeline-based plan</p>
         </header>
 
         <nav class="navigation">
-            <a href="retirement-simulator.html" class="nav-link active">Retirement Simulator</a>
+            <a href="retirement-simulator.html" class="nav-link">Retirement Simulator</a>
             <a href="net-worth-simulator.html" class="nav-link">Net Worth Simulator</a>
             <a href="fire-calculator.html" class="nav-link">FIRE Calculator</a>
-            <a href="bucket-timeline-visualizer.html" class="nav-link">Bucket Timeline</a>
+            <a href="bucket-timeline-visualizer.html" class="nav-link active">Bucket Timeline</a>
         </nav>
 
         <div class="calculator-wrapper retirement-layout">
@@ -1336,21 +1520,11 @@
             </div>
             
             <div class="retirement-inputs">
-                <!-- Portfolio & Expenses Group -->
+                <!-- Settings Group -->
                 <div class="input-section-group">
-                    <h3>💰 Portfolio & Expenses</h3>
+                    <h3>🧭 Plan Settings &amp; Market Assumptions</h3>
                     
                     <div class="input-row">
-                        <div class="compact-input-group">
-                            <label for="portfolio-value">Starting Portfolio Value</label>
-                            <input type="number" id="portfolio-value" value="1000000" step="10000" title="The total value of your investment portfolio at the start of retirement. Include all retirement accounts, taxable investments, and other liquid assets.">
-                            <span class="unit">$</span>
-                        </div>
-                        <div class="compact-input-group">
-                            <label for="annual-expenses">Annual Expenses</label>
-                            <input type="number" id="annual-expenses" value="60000" step="1000" title="Your expected annual living expenses in today's purchasing power. This will be adjusted for inflation during retirement.">
-                            <span class="unit">$/year</span>
-                        </div>
                         <div class="compact-input-group">
                             <label for="retirement-years">Retirement Duration</label>
                             <input type="number" id="retirement-years" min="10" max="50" value="30" step="1" title="How many years you expect to be in retirement. Consider your life expectancy and health factors.">
@@ -1361,14 +1535,6 @@
                             <input type="number" id="withdrawal-rate" min="1" max="10" value="4.00" step="0.01" title="The percentage of your portfolio you plan to withdraw in the first year. The 4% rule is a common benchmark for sustainable withdrawals.">
                             <span class="unit">%</span>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Market Assumptions Group -->
-                <div class="input-section-group">
-                    <h3>� Market Assumptions</h3>
-                    
-                    <div class="input-row two-columns">
                         <div class="compact-input-group">
                             <label for="market-return">Expected Market Return</label>
                             <input type="number" id="market-return" min="0" max="15" value="7.00" step="0.01" title="The average annual return you expect from your investment portfolio. Historical stock market returns average around 7-10% before inflation.">
@@ -1382,11 +1548,22 @@
                     </div>
                 </div>
 
+                <!-- Account Buckets Group -->
+                <div class="input-section-group">
+                    <h3>🪣 Account Buckets</h3>
+                    <p class="section-description">Add the accounts you want to draw down over time. <strong>Start Year</strong> is when an account enters the plan, which lets you model future inheritances or windfalls. <strong>Draw From Year</strong> is when withdrawals are allowed, which lets you model bridge periods before tax-advantaged accounts are accessible. Inheritance / windfall buckets are assumed to compound at the global <strong>Expected Market Return</strong> until their start year. This simulator is now bucket-driven, so add at least one account bucket to model withdrawals.</p>
+
+                    <div class="bucket-accounts">
+                        <div id="account-buckets-container">
+                            <!-- Dynamic account buckets will be added here -->
+                        </div>
+                        <button class="add-event-btn" id="add-account-bucket" title="Add taxable accounts, inherited assets, Roth buckets, traditional retirement accounts, or cash reserves to model draw order over time">+ Add Account Bucket</button>
+                    </div>
+                </div>
+
                 <!-- Income Sources Group -->
                 <div class="input-section-group">
                     <h3>� Retirement Income Sources</h3>
-                    <p class="section-description">Add all your retirement income sources like Social Security, pensions, part-time work, rental income, etc. <strong>Enter amounts as annual values</strong> (per year).</p>
-
                     <div class="income-events">
                         <div id="income-events-container">
                             <!-- Dynamic income events will be added here -->
@@ -1398,196 +1575,140 @@
                 <!-- Major Expenses Group -->
                 <div class="input-section-group">
                     <h3>� Major Expenses</h3>
-                    <p class="section-description">Add significant expenses beyond your regular annual expenses, such as home repairs, medical bills, travel, or helping family members. <strong>Enter amounts as annual values</strong> (per year).</p>
-
                     <div class="expense-events">
                         <div id="expense-events-container">
                             <!-- Dynamic expense events will be added here -->
                         </div>
-                        <button class="add-event-btn" id="add-expense-event" title="Add major expenses like home improvements, medical costs, travel, or family assistance">+ Add Expense Event</button>
+                        <button class="add-event-btn" id="add-expense-event" title="Add spending drags like home improvements, medical costs, travel, or family assistance that reduce available spend in those years">+ Add Expense Event</button>
                     </div>
                 </div>
             </div>
 
             <div class="retirement-results">
                 <div class="results-section">
-                    <h2>Monte Carlo Analysis 
+                    <h2>Timeline Projection 
                         <span class="tooltip" style="margin-left: 8px;">
                             <span class="tooltip-icon" style="font-size: 12px; width: 18px; height: 18px; line-height: 18px;">?</span>
-                            <span class="tooltip-text">Monte Carlo analysis is a mathematical technique that runs thousands of different market scenarios to test how your retirement plan performs under various conditions. Instead of assuming markets will behave perfectly, it simulates realistic ups and downs, crashes and booms, to give you a probability-based view of your retirement success. This helps you understand the range of possible outcomes and plan accordingly.</span>
+                            <span class="tooltip-text">This tool projects your account balances forward using your bucket order, timing rules, expected returns, and SWR assumptions. It is deterministic rather than probabilistic, so it is meant for timeline planning, bridge-period checks, and account sequencing.</span>
                         </span>
                     </h2>
                     
                     <div class="simulation-controls">
                         <div class="simulation-control-group">
-                            <button class="run-simulation-btn" id="run-simulation" title="Run thousands of Monte Carlo simulations to test your retirement plan under various market conditions">Run Monte Carlo Simulation</button>
-                            <div class="simulation-input">
-                                <label>Simulations:</label>
-                                <input type="number" id="num-simulations" min="100" max="10000" value="1000" step="100" title="Number of different market scenarios to simulate. More simulations provide more accurate results but take longer to compute.">
-                                <span>runs</span>
-                            </div>
+                            <button class="run-simulation-btn" id="run-simulation" title="Refresh the deterministic timeline projection using your current bucket assumptions">Update Timeline</button>
                         </div>
-                        <div class="simulation-status" id="simulation-status">Configure your parameters and run simulation</div>
+                        <div class="simulation-status" id="simulation-status">Configure your buckets and update the timeline</div>
                     </div>
 
                     <div class="simulation-container full-width-chart">
-                        <canvas id="monteCarloChart" title="Interactive chart showing possible portfolio outcomes over time. Each line represents a different market scenario simulation."></canvas>
+                        <canvas id="monteCarloChart" title="Timeline chart showing total portfolio value plus each account bucket over time based on your bucket rules."></canvas>
+                        <div class="chart-tooltip" id="timeline-chart-tooltip"></div>
+                    </div>
+                    <div class="simulation-legend" id="timeline-chart-legend"></div>
+
+                    <div class="probability-grid">
+                        <div class="percentiles-row">
+                            <div class="probability-card" title="Balance you can actually draw from in Year 1, excluding buckets that are still locked until later years">
+                                <div class="probability-label">Drawable Start</div>
+                                <div class="probability-value" id="timeline-starting-balance">--</div>
+                            </div>
+                            
+                            <div class="probability-card" title="Your modeled year-one spend, combining SWR-based withdrawals from drawable accounts plus income and minus major expense adjustments">
+                                <div class="probability-label">Year 1 Spend</div>
+                                <div class="probability-value" id="timeline-year-one-spend">--</div>
+                            </div>
+
+                            <div class="probability-card" title="Projected ending balance after the full timeline">
+                                <div class="probability-label">Ending Balance</div>
+                                <div class="probability-value" id="timeline-ending-balance">--</div>
+                            </div>
+                        </div>
+
+                        <div class="success-rate-row">
+                            <div class="probability-card" title="How many buckets were actually used during the timeline">
+                                <div class="probability-label">Buckets Used</div>
+                                <div class="probability-value" id="timeline-buckets-used">--</div>
+                            </div>
+                        </div>
                     </div>
 
-                <div class="simulation-legend">
-                    <div class="legend-item">
-                        <div class="legend-line" style="background: #52c41a; height: 3px;"></div>
-                        <span>90th Percentile (Optimistic)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-line" style="background: #2c3e50; height: 4px;"></div>
-                        <span>Median Outcome</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-line" style="background: #ff7875; height: 3px;"></div>
-                        <span>10th Percentile (Conservative)</span>
-                    </div>
-                </div>
-
-                <!-- Statistics Table for Median Results -->
+                    <!-- Timeline Statistics -->
                 <div class="stats-section" id="stats-section" style="display: none;">
-                    <h4>📊 Median Scenario Statistics</h4>
+                    <h4>📊 Timeline Statistics</h4>
                     <div class="stats-table">
                         <div class="stats-row">
-                            <div class="stat-item" title="How much money you'd have left at the end of retirement in the median scenario">
+                            <div class="stat-item" title="How much money you would have left at the end of the timeline">
                                 <div class="stat-label">Final Net Worth</div>
                                 <div class="stat-value" id="stat-final-worth">--</div>
                             </div>
-                            <div class="stat-item" title="The average annual income you can safely withdraw from your portfolio during retirement">
-                                <div class="stat-label">Annual Retirement Income</div>
+                            <div class="stat-item" title="Your estimated year-one spending power based on SWR, income, and major expense adjustments">
+                                <div class="stat-label">Year 1 Available Spend</div>
                                 <div class="stat-value" id="stat-withdrawal-rate">--</div>
                             </div>
-                            <div class="stat-item" title="Total amount withdrawn from your portfolio over the entire retirement period">
-                                <div class="stat-label">Total Withdrawn</div>
+                            <div class="stat-item" title="The average available spend across the full modeled timeline">
+                                <div class="stat-label">Average Available Spend</div>
                                 <div class="stat-value" id="stat-total-withdrawn">--</div>
                             </div>
                         </div>
                         <div class="stats-row">
-                            <div class="stat-item" title="How much your portfolio grew (or shrank) including all withdrawals and market performance">
+                            <div class="stat-item" title="How much the total portfolio grew or shrank across the timeline">
                                 <div class="stat-label">Portfolio Growth</div>
                                 <div class="stat-value" id="stat-portfolio-growth">--</div>
                             </div>
-                            <div class="stat-item" title="The total additional cost of goods and services due to inflation over your retirement">
-                                <div class="stat-label">Inflation Impact</div>
+                            <div class="stat-item" title="The highest annual spend available at any point in the modeled timeline">
+                                <div class="stat-label">Peak Spend</div>
                                 <div class="stat-value" id="stat-inflation-impact">--</div>
                             </div>
-                            <div class="stat-item" title="How many years your portfolio lasted in the median scenario">
-                                <div class="stat-label">Years Sustained</div>
+                            <div class="stat-item" title="The lowest annual spend available in the modeled timeline">
+                                <div class="stat-label">Lowest Spend</div>
                                 <div class="stat-value" id="stat-years-sustained">--</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="probability-grid">
-                    <div class="success-rate-row">
-                        <div class="probability-card" id="success-rate-card" title="Percentage of simulations where your portfolio lasted the full retirement period without running out of money">
-                            <div class="probability-label">Success Rate</div>
-                            <div class="probability-value" id="success-rate">--%</div>
-                        </div>
-                    </div>
-                    
-                    <div class="percentiles-row">
-                        <div class="probability-card" title="In the worst 10% of market scenarios, this is how much money you'd have left at the end of retirement">
-                            <div class="probability-label">10th Percentile</div>
-                            <div class="probability-value" id="percentile-10">--</div>
-                        </div>
-                        
-                        <div class="probability-card" title="The median outcome - in half of the simulations you'd have more than this amount, and in half you'd have less">
-                            <div class="probability-label">50th Percentile</div>
-                            <div class="probability-value" id="percentile-50">--</div>
-                        </div>
-                        
-                        <div class="probability-card" title="In the best 10% of market scenarios, this is how much money you'd have left at the end of retirement">
-                            <div class="probability-label">90th Percentile</div>
-                            <div class="probability-value" id="percentile-90">--</div>
-                        </div>
-                    </div>
-                </div>
-
-                    <div class="scenario-analysis">
-                        <h4>Simulation Results</h4>
-                        <div id="monte-carlo-analysis" class="scenario-message">
-                            Run the simulation to see detailed analysis of your retirement plan's probability of success.
-                        </div>
-                    </div>
-
-                    <!-- Growth Over Time Table -->
-                    <div class="growth-table-section" id="growth-table-section" style="display: none;">
-                        <div class="growth-table-header">
-                            <h4>📈 Growth Over Time 
-                                <span class="tooltip" style="margin-left: 8px;">
-                                    <span class="tooltip-icon" style="font-size: 12px; width: 18px; height: 18px; line-height: 18px;">?</span>
-                                    <span class="tooltip-text">Detailed year-by-year breakdown of your portfolio performance in the median scenario, including portfolio values, income, expenses, and net withdrawals. This shows how your retirement plan evolves over time.</span>
-                                </span>
-                            </h4>
-                            <button class="export-csv-btn" id="export-csv-btn" title="Export this data to CSV format for use in Excel or other spreadsheet applications">
-                                📊 Export to Excel (CSV)
-                            </button>
-                        </div>
-                        
-                        <div class="table-container">
-                            <table class="growth-table" id="growth-table">
-                                <thead>
-                                    <tr>
-                                        <th>Year</th>
-                                        <th>Portfolio Start</th>
-                                        <th>Market Return</th>
-                                        <th>Portfolio After Growth</th>
-                                        <th>Income</th>
-                                        <th>Expenses</th>
-                                        <th>Net Withdrawal</th>
-                                        <th>Portfolio End</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="growth-table-body">
-                                    <!-- Table data will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Smart Recommendations Panel -->
-                    <div class="recommendations-section" id="recommendations-section" style="display: none;">
-                        <h4>🤖 Smart Recommendations 
+                    <div class="results-section">
+                        <h2>Annual Available Spend Timeline
                             <span class="tooltip" style="margin-left: 8px;">
                                 <span class="tooltip-icon" style="font-size: 12px; width: 18px; height: 18px; line-height: 18px;">?</span>
-                                <span class="tooltip-text">AI-powered analysis of your retirement plan with personalized recommendations to improve your success rate, optimize withdrawals, and reduce risks. Recommendations are prioritized by impact on your retirement security.</span>
+                                <span class="tooltip-text">This chart shows how much annual spend your plan can support in each year based on drawable account balances times SWR, plus income sources and minus any major expense adjustments.</span>
                             </span>
-                        </h4>
-                        <div id="recommendations-container" class="recommendations-container">
-                            <!-- Recommendations will be populated here -->
+                        </h2>
+
+                        <div class="simulation-container">
+                            <canvas id="spendTimelineChart" title="Annual available spend by year based on SWR, income, and major expense adjustments."></canvas>
+                            <div class="chart-tooltip" id="spend-chart-tooltip"></div>
                         </div>
                     </div>
+
+                    <div class="scenario-analysis">
+                        <h4>Timeline Summary</h4>
+                        <div id="monte-carlo-analysis" class="scenario-message">
+                            Update the timeline to see how much annual spend your buckets can support over time.
+                        </div>
+                    </div>
+
                 </div>
             </div>
             </div> <!-- Close main-content -->
         </div>
 
         <footer>
-            <p><small>Monte Carlo simulations provide probabilistic estimates based on historical market data and assumptions. Results are for educational purposes and should not replace professional financial advice.</small></p>
+            <p><small>This timeline visualizer is a planning aid based on your assumptions about returns, timing, and withdrawals. It is meant for educational planning and not as professional financial advice.</small></p>
         </footer>
     </div>
 
-    <script src="assets/js/retirement-simulator.js"></script>
+    <script src="assets/js/bucket-timeline-visualizer.js"></script>
     <script>
         // Initialize tooltip icons
         document.addEventListener('DOMContentLoaded', function() {
             function addTooltipIcons() {
                 // Define tooltips for form inputs
                 const tooltips = {
-                    'portfolio-value': 'The total value of your investment portfolio at the start of retirement. Include all retirement accounts (401k, IRA, Roth IRA), taxable investments, and other liquid assets you plan to use for retirement.',
-                    'annual-expenses': 'Your expected annual living expenses in today\'s purchasing power. Include housing, food, healthcare, transportation, and discretionary spending. This will be automatically adjusted for inflation during retirement.',
                     'retirement-years': 'How many years you expect to be in retirement. Consider your life expectancy, health factors, and family history. The average retirement lasts 15-30 years.',
-                    'withdrawal-rate': 'The percentage of your portfolio you plan to withdraw in the first year of retirement. The famous "4% rule" suggests this rate for a 30-year retirement, but it may vary based on market conditions and personal circumstances.',
-                    'market-return': 'The average annual return you expect from your investment portfolio before inflation. Historical stock market returns average 7-10% annually, but this includes both good and bad years. A diversified portfolio might average 6-8%.',
-                    'inflation-rate': 'The expected annual inflation rate, which erodes purchasing power over time. The Federal Reserve targets 2% inflation, with historical averages around 2-3%. Higher inflation reduces what your money can buy.',
-                    'num-simulations': 'Number of different market scenarios to simulate using Monte Carlo analysis. More simulations (1000+) provide more accurate results but take longer to compute. This tests your plan under various market conditions.'
+                    'withdrawal-rate': 'The sustainable withdrawal rate you want to apply to the drawable portion of your accounts each year. The tool uses this along with your bucket timing rules to estimate annual spend capacity over time.',
+                    'market-return': 'The average annual return you expect from your investment portfolio before inflation. Historical stock market returns average 7-10% annually, but this includes both good and bad years. A diversified portfolio might average 6-8%. The model applies this return using daily compounding.',
+                    'inflation-rate': 'The expected annual inflation rate, which erodes purchasing power over time. The Federal Reserve targets 2% inflation, with historical averages around 2-3%. Higher inflation reduces what your money can buy.'
                 };
 
                 Object.keys(tooltips).forEach(inputId => {
@@ -1623,9 +1744,9 @@
 
                 // Add tooltips to buttons
                 const buttonTooltips = {
-                    'run-simulation': 'Run thousands of Monte Carlo simulations to test your retirement plan under various market conditions',
-                    'add-income-event': 'Add additional income streams like pensions, social security, part-time work, or rental income',
-                    'add-expense-event': 'Add major expenses like home improvements, medical costs, travel, or family assistance',
+                    'run-simulation': 'Refresh the deterministic timeline using your current bucket balances, timing rules, returns, and cash flow assumptions',
+                    'add-income-event': 'Add recurring income that boosts annual spend directly, or one-time income that gets invested and lifts future SWR',
+                    'add-expense-event': 'Add spending drags like home improvements, medical costs, travel, or family assistance that reduce available annual spend in those years',
                     'new-scenario': 'Create a new scenario to test different retirement planning assumptions and compare outcomes',
                     'save-scenario': 'Save the current settings as a named scenario for easy comparison and future reference',
                     'share-scenario': 'Generate a shareable URL for this scenario that you can send to others for collaboration or review'
@@ -1660,12 +1781,12 @@
 
                 // Add tooltips to statistics
                 const statTooltips = {
-                    'FINAL NET WORTH': 'How much money you\'d have left at the end of retirement in the median scenario. A positive number means your portfolio lasted with money remaining; zero or negative means you may have run out of money.',
-                    'ANNUAL RETIREMENT INCOME': 'The average annual income you can safely withdraw from your portfolio during retirement, based on your withdrawal rate and portfolio value. This represents your spending power each year.',
-                    'TOTAL WITHDRAWN': 'Total amount withdrawn from your portfolio over the entire retirement period, including both living expenses and any additional withdrawals. This shows the cumulative impact of your retirement spending.',
+                    'FINAL NET WORTH': 'How much money the modeled bucket plan leaves at the end of the timeline after annual SWR withdrawals and return assumptions.',
+                    'YEAR 1 AVAILABLE SPEND': 'Your modeled spending power in the first year, combining SWR-based withdrawals from drawable accounts plus income and minus major expense adjustments.',
+                    'AVERAGE AVAILABLE SPEND': 'The average annual spend available across the full timeline after combining SWR withdrawals, income events, and major expense adjustments.',
                     'PORTFOLIO GROWTH': 'How much your portfolio grew (or shrank) including all withdrawals and market performance. This accounts for investment returns minus your withdrawals and shows the net change in portfolio value.',
-                    'INFLATION IMPACT': 'The total additional cost of goods and services due to inflation over your retirement. This shows how much more expensive things become, reducing your purchasing power over time.',
-                    'YEARS SUSTAINED': 'How many years your portfolio lasted in the median scenario before running out of money. If this equals your retirement duration, your plan succeeded in the median case.'
+                    'PEAK SPEND': 'The highest annual spend available in the modeled timeline.',
+                    'LOWEST SPEND': 'The lowest annual spend available in the modeled timeline, which helps identify the tightest years in the plan.'
                 };
 
                 document.querySelectorAll('.stat-label').forEach(label => {
@@ -1701,10 +1822,10 @@
 
                 // Add tooltips to probability cards
                 const probabilityTooltips = {
-                    'SUCCESS RATE': 'Percentage of simulations where your portfolio lasted the full retirement period without running out of money. Higher percentages indicate a more secure retirement plan. Generally, 80%+ is considered good, 90%+ is excellent.',
-                    '10TH PERCENTILE': 'In the worst 10% of market scenarios (like major recessions or crashes), your final portfolio value would be this amount or higher. This represents "stress testing" your plan against poor market conditions.',
-                    '50TH PERCENTILE': 'The middle result - in half of all scenarios, your final portfolio value would be higher than this, and in half it would be lower. This represents typical market performance over your retirement.',
-                    '90TH PERCENTILE': 'In the best 10% of market scenarios (strong bull markets), your final portfolio value would be this amount or higher. This represents excellent market conditions and shows your upside potential.'
+                    'DRAWABLE START': 'How much money is actually available to support year-one withdrawals after applying each bucket\'s Draw From Year rule.',
+                    'YEAR 1 SPEND': 'Your modeled spending power in the first year based on SWR, income events, and any major expense adjustments.',
+                    'ENDING BALANCE': 'How much total wealth remains across all buckets at the end of the modeled timeline.',
+                    'BUCKETS USED': 'How many buckets were actually tapped for withdrawals during the modeled timeline.'
                 };
 
                 document.querySelectorAll('.probability-label').forEach(label => {
@@ -1738,87 +1859,6 @@
                     }
                 });
 
-                // Function to add tooltips to income and expense events
-                function addEventTooltips() {
-                    const incomeTooltips = {
-                        'Event Name': 'A descriptive name for this income source (e.g., "Social Security", "Pension", "Part-time work", "Rental income")',
-                        'Type': 'One-time: A single payment in one year. Recurring: Annual payments that continue for multiple years.',
-                        'Amount': 'The annual dollar amount you expect to receive from this income source in today\'s purchasing power.',
-                        'Start Year': 'Which year of retirement this income begins (Year 1 = first year of retirement).',
-                        'End Year': 'Which year of retirement this income ends. For recurring income, this is the last year you\'ll receive it.',
-                        'Inflation Adj.': 'Whether this income increases with inflation over time. Social Security typically adjusts for inflation, while some pensions do not.'
-                    };
-
-                    const expenseTooltips = {
-                        'Event Name': 'A descriptive name for this expense (e.g., "Home renovation", "Medical bills", "Travel fund", "Family assistance")',
-                        'Type': 'One-time: A single expense in one year. Recurring: Annual expenses that continue for multiple years.',
-                        'Amount': 'The annual dollar amount you expect to spend on this expense in today\'s purchasing power.',
-                        'Start Year': 'Which year of retirement this expense begins (Year 1 = first year of retirement).',
-                        'End Year': 'Which year of retirement this expense ends. For recurring expenses, this is the last year of the expense.',
-                        'Inflation Adj.': 'Whether this expense increases with inflation over time. Healthcare costs typically outpace inflation, while fixed payments do not.'
-                    };
-
-                    document.querySelectorAll('.income-event-field label, .expense-event-field label').forEach(label => {
-                        const labelText = label.textContent.trim();
-                        const isExpense = label.closest('.expense-event');
-                        const tooltips = isExpense ? expenseTooltips : incomeTooltips;
-                        
-                        if (tooltips[labelText] && !label.querySelector('.tooltip-icon')) {
-                            // Create tooltip container
-                            const tooltipContainer = document.createElement('span');
-                            tooltipContainer.className = 'tooltip';
-                            tooltipContainer.style.marginLeft = '6px';
-                            
-                            // Create tooltip icon
-                            const icon = document.createElement('span');
-                            icon.className = 'tooltip-icon';
-                            icon.textContent = '?';
-                            icon.style.fontSize = '10px';
-                            icon.style.width = '14px';
-                            icon.style.height = '14px';
-                            icon.style.lineHeight = '14px';
-                            
-                            // Create tooltip text
-                            const tooltipText = document.createElement('span');
-                            tooltipText.className = 'tooltip-text';
-                            tooltipText.textContent = tooltips[labelText];
-                            
-                            // Assemble tooltip
-                            tooltipContainer.appendChild(icon);
-                            tooltipContainer.appendChild(tooltipText);
-                            
-                            // Add to label
-                            label.appendChild(tooltipContainer);
-                        }
-                    });
-                }
-
-                // Add event tooltips initially and when new events are added
-                addEventTooltips();
-                
-                // Monitor for new income and expense events
-                const observer = new MutationObserver(function(mutations) {
-                    mutations.forEach(function(mutation) {
-                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                            mutation.addedNodes.forEach(function(node) {
-                                if (node.nodeType === 1 && node.classList && 
-                                    (node.classList.contains('income-event') || node.classList.contains('expense-event'))) {
-                                    setTimeout(addEventTooltips, 100);
-                                }
-                            });
-                        }
-                    });
-                });
-                
-                observer.observe(document.getElementById('income-events-container') || document.body, {
-                    childList: true,
-                    subtree: true
-                });
-                
-                observer.observe(document.getElementById('expense-events-container') || document.body, {
-                    childList: true,
-                    subtree: true
-                });
             }
             
             // Initialize tooltips on page load
