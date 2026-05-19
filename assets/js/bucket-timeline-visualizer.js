@@ -1144,19 +1144,14 @@ class MonteCarloRetirementSimulator {
         return Math.pow(1 + periodicRate, periodsPerYear) - 1;
     }
 
-    getBucketDeploymentBalance(account, values) {
-        if (account.type === 'inheritance' && account.startYear > 1) {
-            const effectiveAnnualRate = this.getDailyCompoundedAnnualRate(values.marketReturn);
-            return account.balance * Math.pow(1 + effectiveAnnualRate, account.startYear - 1);
-        }
-
+    getBucketDeploymentBalance(account) {
         return account.balance;
     }
 
     deployBucketsForYear(bucketStates, year, values) {
         bucketStates.forEach(state => {
             if (!state.deployed && year >= state.startYear) {
-                state.currentBalance += this.getBucketDeploymentBalance(state, values);
+                state.currentBalance += this.getBucketDeploymentBalance(state);
                 state.deployed = true;
             }
         });
