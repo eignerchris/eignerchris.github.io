@@ -456,6 +456,17 @@
             border-color: #333 transparent transparent transparent;
         }
 
+        .tooltip.tooltip-below .tooltip-text {
+            bottom: auto;
+            top: 125%;
+        }
+
+        .tooltip.tooltip-below .tooltip-text::after {
+            top: auto;
+            bottom: 100%;
+            border-color: transparent transparent #333 transparent;
+        }
+
         .tooltip:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
@@ -1747,9 +1758,7 @@
                     'run-simulation': 'Refresh the deterministic timeline using your current bucket balances, timing rules, returns, and cash flow assumptions',
                     'add-income-event': 'Add recurring income that boosts annual spend directly, or one-time income that gets invested and lifts future SWR',
                     'add-expense-event': 'Add spending drags like home improvements, medical costs, travel, or family assistance that reduce available annual spend in those years',
-                    'new-scenario': 'Create a new scenario to test different retirement planning assumptions and compare outcomes',
-                    'save-scenario': 'Save the current settings as a named scenario for easy comparison and future reference',
-                    'share-scenario': 'Generate a shareable URL for this scenario that you can send to others for collaboration or review'
+                    'new-scenario': 'Create a new scenario to test different retirement planning assumptions and compare outcomes'
                 };
 
                 Object.keys(buttonTooltips).forEach(buttonId => {
@@ -1757,7 +1766,7 @@
                     if (button && !button.querySelector('.tooltip-icon')) {
                         // Create tooltip container
                         const tooltipContainer = document.createElement('span');
-                        tooltipContainer.className = 'tooltip';
+                        tooltipContainer.className = 'tooltip tooltip-below';
                         tooltipContainer.style.marginLeft = '8px';
                         
                         // Create tooltip icon
